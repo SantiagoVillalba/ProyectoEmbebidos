@@ -50,3 +50,14 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+*.d
+*.obj
+*.o
+Lab_RTOS.X/nbproject/private/
+Lab_RTOS.X/nbproject/Package-*.bash
+build/
+debug/
+dist/
+Lab_RTOS.X/nbproject/Makefile-*
+*.map
