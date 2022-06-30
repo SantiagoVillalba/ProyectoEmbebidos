@@ -4,6 +4,10 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <logicalFolder name="f4" displayName="Framework" projectFiles="true">
+        <itemPath>Framework/Accelerometer.h</itemPath>
+        <itemPath>Framework/adc1.h</itemPath>
+      </logicalFolder>
       <logicalFolder name="f1" displayName="freeRTOS" projectFiles="true">
         <itemPath>freeRTOS/include/FreeRTOS.h</itemPath>
         <itemPath>freeRTOS/include/croutine.h</itemPath>
@@ -43,6 +47,7 @@
       </logicalFolder>
       <logicalFolder name="f2" displayName="Platform" projectFiles="true">
         <itemPath>Platform/WS2812.h</itemPath>
+        <itemPath>Platform/LIS3DH.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="Utils" projectFiles="true">
         <itemPath>Utils/utils.h</itemPath>
@@ -56,6 +61,10 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <logicalFolder name="f4" displayName="Framework" projectFiles="true">
+        <itemPath>Framework/Accelerometer.c</itemPath>
+        <itemPath>Framework/adc1.c</itemPath>
+      </logicalFolder>
       <logicalFolder name="f1" displayName="freeRTOS" projectFiles="true">
         <itemPath>freeRTOS/croutine.c</itemPath>
         <itemPath>freeRTOS/event_groups.c</itemPath>
@@ -88,6 +97,7 @@
       </logicalFolder>
       <logicalFolder name="f2" displayName="Platform" projectFiles="true">
         <itemPath>Platform/WS2812.c</itemPath>
+        <itemPath>Platform/LIS3DH.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="Utils" projectFiles="true">
         <itemPath>Utils/utils.c</itemPath>
@@ -103,6 +113,7 @@
   </logicalFolder>
   <sourceRootList>
     <Elem>.</Elem>
+    <Elem>../../../../Desktop/My Things/Universidad/Sistemas Embebidos/proyectos embebidos/proyectos embebidos/Laboratorio4/Lab_4_RTOS/Lab_4_RTOS/Lab_RTOS.X/Platform</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
