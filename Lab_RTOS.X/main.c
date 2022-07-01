@@ -20,6 +20,7 @@
 
 #include "mcc_generated_files/system.h"
 #include "mcc_generated_files/pin_manager.h"
+#include "Framework/Accelerometer.h"
 
 void blinkLED( void *p_param );
 void UsbController( void *p_param );
@@ -40,6 +41,7 @@ int main(void)
 {
     // initialize the device
     SYSTEM_Initialize( );
+    while(!ACCEL_init());
     // Uso un semaforo contador para poder usar un take en el usb y poder bloquearme enseguida sin tener que usar
     // dos take
     semUsb = xSemaphoreCreateCounting(1,0);
@@ -157,6 +159,21 @@ void UsbController( void *p_param ){
         prender_led ledM;
         prender_led* memDinamic;
         app_register_t ultLed;
+        
+        while(1){
+            xSemaphoreTake( semUsb, portMAX_DELAY);
+            char nuevo[70];
+            Accel_t accel;
+            if(ACCEL_GetAccel (&accel)){
+                sprintf(nuevo,"\nEntrada de datos:\nx: %f\ny: %f\nz: %f\n",accel.Accel_X,accel.Accel_Y,accel.Accel_Z);
+                checkUSBReady();
+                putsUSBUSART(nuevo);
+            }else{
+                checkUSBReady();
+                putsUSBUSART("failed");
+
+            }
+        }
         
         if(primeraVez){
             xSemaphoreTake( semUsb, portMAX_DELAY);

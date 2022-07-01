@@ -6,7 +6,6 @@
                    projectFiles="true">
       <logicalFolder name="f4" displayName="Framework" projectFiles="true">
         <itemPath>Framework/Accelerometer.h</itemPath>
-        <itemPath>Framework/adc1.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f1" displayName="freeRTOS" projectFiles="true">
         <itemPath>freeRTOS/include/FreeRTOS.h</itemPath>
@@ -63,7 +62,6 @@
                    projectFiles="true">
       <logicalFolder name="f4" displayName="Framework" projectFiles="true">
         <itemPath>Framework/Accelerometer.c</itemPath>
-        <itemPath>Framework/adc1.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f1" displayName="freeRTOS" projectFiles="true">
         <itemPath>freeRTOS/croutine.c</itemPath>
