@@ -24,47 +24,4 @@ void settingRGB(uint8_t led, colors color){
     WS2812_send( leds , 8);
 }
 
-bool setearColor(uint8_t cl,colors *color){
-    switch(cl){
-        case 1:
-            *color = Red;
-            return true;
-        case 2:
-            *color = Green;
-            return true;
-        case 3:
-            *color = Blue;
-            return true;
-        case 4:
-            *color = White;
-            return true;
-        case 5:
-            *color = Black;
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool horaYfechaCorrecta(int hh,int mm,int ss,int dd,int mth,int yy){
-    if(yy<1970){
-        return false;
-    }
-    if(mth>12 || mth<1){
-        return false;
-    }
-    if(dd<1 || dd>31){
-        return false;
-    }
-    if(ss<0 || ss>59){
-        return false;
-    }
-    if(mm<0 || mm>59){
-        return false;
-    }
-    if(hh<0 || hh>23){
-        return false;
-    }
-    return true;
-}
 
