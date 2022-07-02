@@ -26,6 +26,8 @@ void UsbController( void *p_param );
 void LedCola( void *p_param );
 void vUSBService (TimerHandle_t xTimer);
 
+void vUpdatePosition (TimerHandle_t xTimer);
+
 SemaphoreHandle_t semUsb ;
 SemaphoreHandle_t semLed ;
 char recibir[50];
@@ -41,6 +43,8 @@ int main(void)
     SYSTEM_Initialize( );
     while(!ACCEL_init());
     
+    // Anterior Lab:
+    
     queue = xQueueCreate(20,sizeof(prender_led));
     /* Create the tasks defined within this file. */
     xTaskCreate( UsbController, "task2", configMINIMAL_STACK_SIZE+500, NULL, tskIDLE_PRIORITY+2, NULL );
@@ -48,6 +52,17 @@ int main(void)
     
     TimerHandle_t x = xTimerCreate ("Service USB",pdMS_TO_TICKS(5UL),pdTRUE, NULL , vUSBService);
     xTimerStart( x, 0 );
+    
+ 
+    semUsb = xSemaphoreCreateCounting(1,0);
+    semLed = xSemaphoreCreateCounting(1,1);
+    
+    // Proyecto
+    
+    TimerHandle_t x = xTimerCreate ("Update Position",pdMS_TO_TICKS(1UL),pdTRUE, NULL , vUpdatePosition);
+    xTimerStart( x, 0 );
+    
+    
     
     /* Finally start the scheduler. */
     vTaskStartScheduler( );
@@ -58,6 +73,14 @@ int main(void)
     to be created.  See the memory management section on the FreeRTOS web site
     for more details. */
     for(;;);
+}
+
+
+void vUpdatePosition (TimerHandle_t xTimer){
+    Accel_t accel;
+    if(ACCEL_GetAccel (&accel)){
+        
+    }
 }
 
 void vAgregarQueue (TimerHandle_t xTimer){
