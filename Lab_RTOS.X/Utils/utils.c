@@ -1,5 +1,7 @@
 #include "utils.h"
 
+
+
 void settingRGB(uint8_t led, colors color){
     static ws2812_t leds[8];
     // restamos uno para que vaya del 1 al 8 los leds
