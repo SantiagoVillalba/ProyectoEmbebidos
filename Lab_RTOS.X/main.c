@@ -35,6 +35,20 @@ uint8_t mensaje;
 QueueHandle_t queue;
 
 /*
+                    Variables posicion 
+*/
+short cuadrantePlayer;
+short cuadranteMaquina;
+
+float radio;
+float anguloR;
+float x,y;
+float velocidadX = 0; 
+float velocidadY = 0;
+float velocidadTan = 0;
+float velocidadRad = 0;
+
+/*
                          Main application
  */
 int main(void)
@@ -59,10 +73,12 @@ int main(void)
     
     // Proyecto
     
-    TimerHandle_t x = xTimerCreate ("Update Position",pdMS_TO_TICKS(1UL),pdTRUE, NULL , vUpdatePosition);
-    xTimerStart( x, 0 );
+    radio = rand() % 5000;
+    anguloR = rand() %(M_PI*2);
     
     
+    TimerHandle_t y = xTimerCreate ("Update Position",pdMS_TO_TICKS(1UL),pdTRUE, NULL , vUpdatePosition);
+    xTimerStart( y, 0 );
     
     /* Finally start the scheduler. */
     vTaskStartScheduler( );
@@ -78,9 +94,48 @@ int main(void)
 
 void vUpdatePosition (TimerHandle_t xTimer){
     Accel_t accel;
+    // Sistema Polar
+    float acTan;
+    float acRadial;
+    float varVelocidadTan,varVelocidadRadial;
+    float varPosicRad;
+    float varAnguloTan;
+    // Sistema Rectangular
+    float varVX,varVY;
+    float varPX,varPY;
+    
     if(ACCEL_GetAccel (&accel)){
-        
+        if(radio>=110){
+            acRadial = cos(accel.Accel_X) + sin(accel.Accel_Y);
+            acTan = cos(accel.Accel_Y) - sin(accel.Accel_X);
+            varVelocidadTan = acTan * 0.001;
+            varVelocidadRadial = acRadial * 0.001;
+            velocidadTan += varVelocidadTan;
+            velocidadRad += varVelocidadRadial;
+            varPosicRad = velocidadRad * 0.001 ;
+            radio += varPosicRad;
+            varAnguloTan = velocidadTan/radio* 0.001 ;
+            anguloR += varAnguloTan; 
+            if(radio>=5000 && velocidadRad > 0){
+                radio = 5000;
+                velocidadRad = 0;
+            }
+        }else{
+            // conversion a cartesiano;
+            
+            varVX = accel.Accel_X * 0.001;
+            varVY = accel.Accel_Y * 0.001;
+            velocidadX += varVX;
+            velocidadY += varVY;
+            varPX = velocidadX * 0.001;
+            varPY = velocidadY * 0.001;
+            x += varPX;
+            y += varPY;
+            
+        }
+        //prenderLed();
     }
+    
 }
 
 void vAgregarQueue (TimerHandle_t xTimer){
