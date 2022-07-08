@@ -10,6 +10,7 @@
 #include <string.h>
 #include <time.h>
 #include <stdio.h>
+#include <math.h>
 
 /* Kernel includes. */
 #include "FreeRTOS.h"
@@ -48,6 +49,7 @@ float velocidadY = 0;
 float velocidadTan = 0;
 float velocidadRad = 0;
 
+bool vieneDePolar;
 /*
                          Main application
  */
@@ -64,8 +66,8 @@ int main(void)
     xTaskCreate( UsbController, "task2", configMINIMAL_STACK_SIZE+500, NULL, tskIDLE_PRIORITY+2, NULL );
     xTaskCreate( LedCola, "task3", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL );
     
-    TimerHandle_t x = xTimerCreate ("Service USB",pdMS_TO_TICKS(5UL),pdTRUE, NULL , vUSBService);
-    xTimerStart( x, 0 );
+    TimerHandle_t z = xTimerCreate ("Service USB",pdMS_TO_TICKS(5UL),pdTRUE, NULL , vUSBService);
+    xTimerStart( z, 0 );
     
  
     semUsb = xSemaphoreCreateCounting(1,0);
@@ -74,10 +76,17 @@ int main(void)
     // Proyecto
     
     radio = rand() % 5000;
-    anguloR = rand() %(M_PI*2);
+    while(radio<110){
+        radio = rand() % 5000;
+    }
+    vieneDePolar = true;
+    anguloR = rand() * (M_PI*2) / RAND_MAX  ;
+    // Convertir esto en cartesiana.
+    x = radio * cos(anguloR);
+    y = radio * sin(anguloR);
     
     
-    TimerHandle_t y = xTimerCreate ("Update Position",pdMS_TO_TICKS(1UL),pdTRUE, NULL , vUpdatePosition);
+    TimerHandle_t y = xTimerCreate ("Update Position",pdMS_TO_TICKS(100UL),pdTRUE, NULL , vUpdatePosition);
     xTimerStart( y, 0 );
     
     /* Finally start the scheduler. */
@@ -91,6 +100,91 @@ int main(void)
     for(;;);
 }
 
+void prenderLed(){
+    // protegerlo con semaforos
+    if(anguloR >= 0 && anguloR < M_PI/4){
+        cuadrantePlayer = 1;
+        settingRGB(1,White);
+        // cambiarlo y hacerlo con una task y los cuadrantes
+        settingRGB(2,Black);
+        settingRGB(3,Black);
+        settingRGB(4,Black);
+        settingRGB(5,Black);
+        settingRGB(6,Black);
+        settingRGB(7,Black);
+        settingRGB(8,Black);
+    }else if(anguloR >= M_PI/4 && anguloR < M_PI/2){
+        cuadrantePlayer = 2;
+        settingRGB(2,White);
+        settingRGB(1,Black);
+        settingRGB(3,Black);
+        settingRGB(4,Black);
+        settingRGB(5,Black);
+        settingRGB(6,Black);
+        settingRGB(7,Black);
+        settingRGB(8,Black);
+    }else if(anguloR >= M_PI/2 && anguloR < 3*M_PI/4){
+        cuadrantePlayer = 3;
+        settingRGB(3,White);
+        settingRGB(2,Black);
+        settingRGB(1,Black);
+        settingRGB(4,Black);
+        settingRGB(5,Black);
+        settingRGB(6,Black);
+        settingRGB(7,Black);
+        settingRGB(8,Black);
+    }else if(anguloR >= 3*M_PI/4 && anguloR < M_PI){
+        cuadrantePlayer = 4;
+        settingRGB(4,White);
+        settingRGB(2,Black);
+        settingRGB(3,Black);
+        settingRGB(1,Black);
+        settingRGB(5,Black);
+        settingRGB(6,Black);
+        settingRGB(7,Black);
+        settingRGB(8,Black);
+    }else if(anguloR >= M_PI && anguloR < 5*M_PI/4){
+        cuadrantePlayer = 5;
+        settingRGB(5,White);
+        settingRGB(2,Black);
+        settingRGB(3,Black);
+        settingRGB(4,Black);
+        settingRGB(1,Black);
+        settingRGB(6,Black);
+        settingRGB(7,Black);
+        settingRGB(8,Black);
+    }else if(anguloR >= 5*M_PI/4 && anguloR < 3*M_PI/2){
+        cuadrantePlayer = 6;
+        settingRGB(6,White);
+        settingRGB(2,Black);
+        settingRGB(3,Black);
+        settingRGB(4,Black);
+        settingRGB(5,Black);
+        settingRGB(1,Black);
+        settingRGB(7,Black);
+        settingRGB(8,Black);
+    }else if(anguloR >= 3*M_PI/2 && anguloR < 7*M_PI/4){
+        cuadrantePlayer = 7;
+        settingRGB(7,White);
+        settingRGB(2,Black);
+        settingRGB(3,Black);
+        settingRGB(4,Black);
+        settingRGB(5,Black);
+        settingRGB(6,Black);
+        settingRGB(1,Black);
+        settingRGB(8,Black);
+    }else if(anguloR >= 7*M_PI/4){
+        cuadrantePlayer = 8;
+        settingRGB(8,White);
+        settingRGB(2,Black);
+        settingRGB(3,Black);
+        settingRGB(4,Black);
+        settingRGB(5,Black);
+        settingRGB(6,Black);
+        settingRGB(7,Black);
+        settingRGB(1,Black);
+    }
+}
 
 void vUpdatePosition (TimerHandle_t xTimer){
     Accel_t accel;
@@ -106,6 +200,22 @@ void vUpdatePosition (TimerHandle_t xTimer){
     
     if(ACCEL_GetAccel (&accel)){
         if(radio>=110){
+            if(!vieneDePolar){
+                //conversion a polar
+                radio = sqrt(pow(x,2)+pow(y,2));
+                if(x > 0 && y > 0){
+                    anguloR = atan(y/x) ;
+                }else if(x = 0 && y > 0){
+                    anguloR = M_PI / 2;
+                }else if(x < 0){
+                    anguloR = atan(y/x) + M_PI;
+                }else if(x = 0 && y < 0){
+                    anguloR = 3*M_PI / 2 ;
+                }else if(x > 0 && y < 0){
+                    anguloR = atan(y/x) + 2*M_PI;
+                }
+                vieneDePolar = true;
+            }
             acRadial = cos(accel.Accel_X) + sin(accel.Accel_Y);
             acTan = cos(accel.Accel_Y) - sin(accel.Accel_X);
             varVelocidadTan = acTan * 0.001;
@@ -121,8 +231,12 @@ void vUpdatePosition (TimerHandle_t xTimer){
                 velocidadRad = 0;
             }
         }else{
-            // conversion a cartesiano;
-            
+            if(vieneDePolar){
+                // conversion a cartesiano;
+                x = radio * cos(anguloR);
+                y = radio * sin(anguloR);
+                vieneDePolar = false;
+            }
             varVX = accel.Accel_X * 0.001;
             varVY = accel.Accel_Y * 0.001;
             velocidadX += varVX;
@@ -133,10 +247,12 @@ void vUpdatePosition (TimerHandle_t xTimer){
             y += varPY;
             
         }
-        //prenderLed();
+        prenderLed();
     }
     
 }
+
+
 
 void vAgregarQueue (TimerHandle_t xTimer){
     prender_led* mem = (prender_led*)pvTimerGetTimerID(xTimer);
