@@ -74,6 +74,14 @@ int main(void)
     semLed = xSemaphoreCreateCounting(1,1);
     
     // Proyecto
+    settingRGB(1,Black);
+    settingRGB(2,Black);
+    settingRGB(3,Black);
+    settingRGB(4,Black);
+    settingRGB(5,Black);
+    settingRGB(6,Black);
+    settingRGB(7,Black);
+    settingRGB(8,Black);
     
     radio = rand() % 5000;
     while(radio<110){
@@ -86,7 +94,7 @@ int main(void)
     y = radio * sin(anguloR);
     
     
-    TimerHandle_t y = xTimerCreate ("Update Position",pdMS_TO_TICKS(100UL),pdTRUE, NULL , vUpdatePosition);
+    TimerHandle_t y = xTimerCreate ("Update Position",pdMS_TO_TICKS(1UL),pdTRUE, NULL , vUpdatePosition);
     xTimerStart( y, 0 );
     
     /* Finally start the scheduler. */
@@ -103,86 +111,53 @@ int main(void)
 void prenderLed(){
     // protegerlo con semaforos
     if(anguloR >= 0 && anguloR < M_PI/4){
-        cuadrantePlayer = 1;
-        settingRGB(1,White);
-        // cambiarlo y hacerlo con una task y los cuadrantes
-        settingRGB(2,Black);
-        settingRGB(3,Black);
-        settingRGB(4,Black);
-        settingRGB(5,Black);
-        settingRGB(6,Black);
-        settingRGB(7,Black);
-        settingRGB(8,Black);
+        if(cuadrantePlayer != 1){
+            settingRGB(cuadrantePlayer,Black);
+            cuadrantePlayer = 1;
+            settingRGB(1,White);
+        }
     }else if(anguloR >= M_PI/4 && anguloR < M_PI/2){
-        cuadrantePlayer = 2;
-        settingRGB(2,White);
-        settingRGB(1,Black);
-        settingRGB(3,Black);
-        settingRGB(4,Black);
-        settingRGB(5,Black);
-        settingRGB(6,Black);
-        settingRGB(7,Black);
-        settingRGB(8,Black);
+        if(cuadrantePlayer != 2){
+            settingRGB(cuadrantePlayer,Black);
+            cuadrantePlayer = 2;
+            settingRGB(2,White);
+        }
     }else if(anguloR >= M_PI/2 && anguloR < 3*M_PI/4){
-        cuadrantePlayer = 3;
-        settingRGB(3,White);
-        settingRGB(2,Black);
-        settingRGB(1,Black);
-        settingRGB(4,Black);
-        settingRGB(5,Black);
-        settingRGB(6,Black);
-        settingRGB(7,Black);
-        settingRGB(8,Black);
+        if(cuadrantePlayer != 3){
+            settingRGB(cuadrantePlayer,Black);
+            cuadrantePlayer = 3;
+            settingRGB(3,White);
+        }
     }else if(anguloR >= 3*M_PI/4 && anguloR < M_PI){
-        cuadrantePlayer = 4;
-        settingRGB(4,White);
-        settingRGB(2,Black);
-        settingRGB(3,Black);
-        settingRGB(1,Black);
-        settingRGB(5,Black);
-        settingRGB(6,Black);
-        settingRGB(7,Black);
-        settingRGB(8,Black);
+        if(cuadrantePlayer != 4){
+            settingRGB(cuadrantePlayer,Black);
+            cuadrantePlayer = 4;
+            settingRGB(4,White);
+        }
     }else if(anguloR >= M_PI && anguloR < 5*M_PI/4){
-        cuadrantePlayer = 5;
-        settingRGB(5,White);
-        settingRGB(2,Black);
-        settingRGB(3,Black);
-        settingRGB(4,Black);
-        settingRGB(1,Black);
-        settingRGB(6,Black);
-        settingRGB(7,Black);
-        settingRGB(8,Black);
+        if(cuadrantePlayer != 5){
+            settingRGB(cuadrantePlayer,Black);
+            cuadrantePlayer = 5;
+            settingRGB(5,White);
+        }
     }else if(anguloR >= 5*M_PI/4 && anguloR < 3*M_PI/2){
-        cuadrantePlayer = 6;
-        settingRGB(6,White);
-        settingRGB(2,Black);
-        settingRGB(3,Black);
-        settingRGB(4,Black);
-        settingRGB(5,Black);
-        settingRGB(1,Black);
-        settingRGB(7,Black);
-        settingRGB(8,Black);
+        if(cuadrantePlayer != 6){
+            settingRGB(cuadrantePlayer,Black);
+            cuadrantePlayer = 6;
+            settingRGB(6,White);
+        }
     }else if(anguloR >= 3*M_PI/2 && anguloR < 7*M_PI/4){
-        cuadrantePlayer = 7;
-        settingRGB(7,White);
-        settingRGB(2,Black);
-        settingRGB(3,Black);
-        settingRGB(4,Black);
-        settingRGB(5,Black);
-        settingRGB(6,Black);
-        settingRGB(1,Black);
-        settingRGB(8,Black);
+        if(cuadrantePlayer != 7){
+            settingRGB(cuadrantePlayer,Black);
+            cuadrantePlayer = 7;
+            settingRGB(7,White);
+        }
     }else if(anguloR >= 7*M_PI/4){
-        cuadrantePlayer = 8;
-        settingRGB(8,White);
-        settingRGB(2,Black);
-        settingRGB(3,Black);
-        settingRGB(4,Black);
-        settingRGB(5,Black);
-        settingRGB(6,Black);
-        settingRGB(7,Black);
-        settingRGB(1,Black);
+        if(cuadrantePlayer != 8){
+            settingRGB(cuadrantePlayer,Black);
+            cuadrantePlayer = 8;
+            settingRGB(8,White);
+        }
     }
 }
 
