@@ -50,6 +50,7 @@ float velocidadTan = 0;
 float velocidadRad = 0;
 
 bool vieneDePolar;
+void prenderLed();
 /*
                          Main application
  */
@@ -93,6 +94,7 @@ int main(void)
     x = radio * cos(anguloR);
     y = radio * sin(anguloR);
     
+    prenderLed();
     
     TimerHandle_t y = xTimerCreate ("Update Position",pdMS_TO_TICKS(1UL),pdTRUE, NULL , vUpdatePosition);
     xTimerStart( y, 0 );
@@ -191,8 +193,8 @@ void vUpdatePosition (TimerHandle_t xTimer){
                 }
                 vieneDePolar = true;
             }
-            acRadial = cos(accel.Accel_X) + sin(accel.Accel_Y);
-            acTan = cos(accel.Accel_Y) - sin(accel.Accel_X);
+            acRadial = cos(accel.Accel_X * -1) + sin(accel.Accel_Y * -1);
+            acTan = cos(accel.Accel_Y * -1) - sin(accel.Accel_X * -1);
             varVelocidadTan = acTan * 0.001;
             varVelocidadRadial = acRadial * 0.001;
             velocidadTan += varVelocidadTan;
@@ -212,8 +214,8 @@ void vUpdatePosition (TimerHandle_t xTimer){
                 y = radio * sin(anguloR);
                 vieneDePolar = false;
             }
-            varVX = accel.Accel_X * 0.001;
-            varVY = accel.Accel_Y * 0.001;
+            varVX = accel.Accel_X * -1 * 0.001;
+            varVY = accel.Accel_Y * -1 * 0.001;
             velocidadX += varVX;
             velocidadY += varVY;
             varPX = velocidadX * 0.001;
