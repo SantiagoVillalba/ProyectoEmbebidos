@@ -51,9 +51,6 @@
 */
 #include <xc.h>
 #include <stdbool.h>
-/**
-    Section: Device Pin Macros
-*/
 
 /**
   @Summary
@@ -104,7 +101,36 @@
  */
 #define ACC_SCK_SetLow()           ( LATCCLR = (1 << 13) )
 
+/**
+  @Summary
+    Sets a value to the GPIO pin.
 
+  @Description
+    Sets or Resets the GPIO pin, RC13, low or high using LATC13.
+
+  @Preconditions
+    The RC13 must be set to an output.
+
+  @Returns
+    None.
+
+  @Param
+    bool value; : value to be set to the GPIO pin.
+
+  @Example
+    <code>
+    // Set RC13 to low.
+    ACC_SCK_SetValue(false);
+    </code>
+
+ */
+inline static void ACC_SCK_SetValue(bool value) {
+    if (value) {
+        ACC_SCK_SetHigh();
+    } else {
+        ACC_SCK_SetLow();
+    }
+}
 
 /**
   @Summary
@@ -401,6 +427,36 @@
  */
 #define ACC_CS_SetLow()           ( LATDCLR = (1 << 2) )
 
+/**
+  @Summary
+    Sets a value to the GPIO pin.
+
+  @Description
+    Sets or Resets the GPIO pin, RD2, low or high using LATD2.
+
+  @Preconditions
+    The RD2 must be set to an output.
+
+  @Returns
+    None.
+
+  @Param
+    bool value; : value to be set to the GPIO pin.
+
+  @Example
+    <code>
+    // Set RD2 to low.
+    ACC_CS_SetValue(false);
+    </code>
+
+ */
+inline static void ACC_CS_SetValue(bool value) {
+    if (value) {
+        ACC_CS_SetHigh();
+    } else {
+        ACC_CS_SetLow();
+    }
+}
 
 /**
   @Summary
@@ -549,6 +605,36 @@
  */
 #define ACC_MISO_SetLow()           ( LATDCLR = (1 << 4) )
 
+/**
+  @Summary
+    Sets a value to the GPIO pin.
+
+  @Description
+    Sets or Resets the GPIO pin, RD4, low or high using LATD4.
+
+  @Preconditions
+    The RD4 must be set to an output.
+
+  @Returns
+    None.
+
+  @Param
+    bool value; : value to be set to the GPIO pin.
+
+  @Example
+    <code>
+    // Set RD4 to low.
+    ACC_MISO_SetValue(false);
+    </code>
+
+ */
+inline static void ACC_MISO_SetValue(bool value) {
+    if (value) {
+        ACC_MISO_SetHigh();
+    } else {
+        ACC_MISO_SetLow();
+    }
+}
 
 /**
   @Summary
@@ -649,6 +735,9 @@
  */
 #define ACC_MISO_SetDigitalOutput()   ( TRISDCLR = (1 << 4) )
 
+/**
+    Section: Device Pin Macros
+*/
 /**
   @Summary
     Sets the GPIO pin, RA10, high using LATA10.
@@ -1925,188 +2014,6 @@ inline static void ACC_INT2_SetValue(bool value)
 #define ACC_INT2_SetDigitalOutput()   ( TRISBCLR = (1 << 8) )
 /**
   @Summary
-    Sets the GPIO pin, RC13, high using LATC13.
-
-  @Description
-    Sets the GPIO pin, RC13, high using LATC13.
-
-  @Preconditions
-    The RC13 must be set to an output.
-
-  @Returns
-    None.
-
-  @Param
-    None.
-
-  @Example
-    <code>
-    // Set RC13 high (1)
-    ACC_SCK_SetHigh();
-    </code>
-
-*/
-#define ACC_SCK_SetHigh()          ( LATCSET = (1 << 13) )
-/**
-  @Summary
-    Sets the GPIO pin, RC13, low using LATC13.
-
-  @Description
-    Sets the GPIO pin, RC13, low using LATC13.
-
-  @Preconditions
-    The RC13 must be set to an output.
-
-  @Returns
-    None.
-
-  @Param
-    None.
-
-  @Example
-    <code>
-    // Set RC13 low (0)
-    ACC_SCK_SetLow();
-    </code>
-
-*/
-#define ACC_SCK_SetLow()           ( LATCCLR = (1 << 13) )
-
-/**
-  @Summary
-    Sets a value to the GPIO pin.
-
-  @Description
-    Sets or Resets the GPIO pin, RC13, low or high using LATC13.
-
-  @Preconditions
-    The RC13 must be set to an output.
-
-  @Returns
-    None.
-
-  @Param
-    bool value; : value to be set to the GPIO pin.
-
-  @Example
-    <code>
-    // Set RC13 to low.
-    ACC_SCK_SetValue(false);
-    </code>
-
-*/
-inline static void ACC_SCK_SetValue(bool value)
-{
-  if(value)
-  {
-    ACC_SCK_SetHigh();
-  }
-  else
-  {
-    ACC_SCK_SetLow();
-  }
-}
-
-/**
-  @Summary
-    Toggles the GPIO pin, RC13, using LATC13.
-
-  @Description
-    Toggles the GPIO pin, RC13, using LATC13.
-
-  @Preconditions
-    The RC13 must be set to an output.
-
-  @Returns
-    None.
-
-  @Param
-    None.
-
-  @Example
-    <code>
-    // Toggle RC13
-    ACC_SCK_Toggle();
-    </code>
-
-*/
-#define ACC_SCK_Toggle()           ( LATCINV = (1 << 13) )
-/**
-  @Summary
-    Reads the value of the GPIO pin, RC13.
-
-  @Description
-    Reads the value of the GPIO pin, RC13.
-
-  @Preconditions
-    None.
-
-  @Returns
-    None.
-
-  @Param
-    None.
-
-  @Example
-    <code>
-    uint16_t portValue;
-
-    // Read RC13
-    postValue = ACC_SCK_GetValue();
-    </code>
-
-*/
-#define ACC_SCK_GetValue()         PORTCbits.RC13
-/**
-  @Summary
-    Configures the GPIO pin, RC13, as an input.
-
-  @Description
-    Configures the GPIO pin, RC13, as an input.
-
-  @Preconditions
-    None.
-
-  @Returns
-    None.
-
-  @Param
-    None.
-
-  @Example
-    <code>
-    // Sets the RC13 as an input
-    ACC_SCK_SetDigitalInput();
-    </code>
-
-*/
-#define ACC_SCK_SetDigitalInput()   ( TRISCSET = (1 << 13) )
-/**
-  @Summary
-    Configures the GPIO pin, RC13, as an output.
-
-  @Description
-    Configures the GPIO pin, RC13, as an output.
-
-  @Preconditions
-    None.
-
-  @Returns
-    None.
-
-  @Param
-    None.
-
-  @Example
-    <code>
-    // Sets the RC13 as an output
-    ACC_SCK_SetDigitalOutput();
-    </code>
-
-*/
-#define ACC_SCK_SetDigitalOutput()   ( TRISCCLR = (1 << 13) )
-/**
-  @Summary
     Sets the GPIO pin, RC5, high using LATC5.
 
   @Description
@@ -2471,188 +2378,6 @@ inline static void ACC_MOSI_SetValue(bool value)
 #define ACC_MOSI_SetDigitalOutput()   ( TRISDCLR = (1 << 0) )
 /**
   @Summary
-    Sets the GPIO pin, RD2, high using LATD2.
-
-  @Description
-    Sets the GPIO pin, RD2, high using LATD2.
-
-  @Preconditions
-    The RD2 must be set to an output.
-
-  @Returns
-    None.
-
-  @Param
-    None.
-
-  @Example
-    <code>
-    // Set RD2 high (1)
-    ACC_CS_SetHigh();
-    </code>
-
-*/
-#define ACC_CS_SetHigh()          ( LATDSET = (1 << 2) )
-/**
-  @Summary
-    Sets the GPIO pin, RD2, low using LATD2.
-
-  @Description
-    Sets the GPIO pin, RD2, low using LATD2.
-
-  @Preconditions
-    The RD2 must be set to an output.
-
-  @Returns
-    None.
-
-  @Param
-    None.
-
-  @Example
-    <code>
-    // Set RD2 low (0)
-    ACC_CS_SetLow();
-    </code>
-
-*/
-#define ACC_CS_SetLow()           ( LATDCLR = (1 << 2) )
-
-/**
-  @Summary
-    Sets a value to the GPIO pin.
-
-  @Description
-    Sets or Resets the GPIO pin, RD2, low or high using LATD2.
-
-  @Preconditions
-    The RD2 must be set to an output.
-
-  @Returns
-    None.
-
-  @Param
-    bool value; : value to be set to the GPIO pin.
-
-  @Example
-    <code>
-    // Set RD2 to low.
-    ACC_CS_SetValue(false);
-    </code>
-
-*/
-inline static void ACC_CS_SetValue(bool value)
-{
-  if(value)
-  {
-    ACC_CS_SetHigh();
-  }
-  else
-  {
-    ACC_CS_SetLow();
-  }
-}
-
-/**
-  @Summary
-    Toggles the GPIO pin, RD2, using LATD2.
-
-  @Description
-    Toggles the GPIO pin, RD2, using LATD2.
-
-  @Preconditions
-    The RD2 must be set to an output.
-
-  @Returns
-    None.
-
-  @Param
-    None.
-
-  @Example
-    <code>
-    // Toggle RD2
-    ACC_CS_Toggle();
-    </code>
-
-*/
-#define ACC_CS_Toggle()           ( LATDINV = (1 << 2) )
-/**
-  @Summary
-    Reads the value of the GPIO pin, RD2.
-
-  @Description
-    Reads the value of the GPIO pin, RD2.
-
-  @Preconditions
-    None.
-
-  @Returns
-    None.
-
-  @Param
-    None.
-
-  @Example
-    <code>
-    uint16_t portValue;
-
-    // Read RD2
-    postValue = ACC_CS_GetValue();
-    </code>
-
-*/
-#define ACC_CS_GetValue()         PORTDbits.RD2
-/**
-  @Summary
-    Configures the GPIO pin, RD2, as an input.
-
-  @Description
-    Configures the GPIO pin, RD2, as an input.
-
-  @Preconditions
-    None.
-
-  @Returns
-    None.
-
-  @Param
-    None.
-
-  @Example
-    <code>
-    // Sets the RD2 as an input
-    ACC_CS_SetDigitalInput();
-    </code>
-
-*/
-#define ACC_CS_SetDigitalInput()   ( TRISDSET = (1 << 2) )
-/**
-  @Summary
-    Configures the GPIO pin, RD2, as an output.
-
-  @Description
-    Configures the GPIO pin, RD2, as an output.
-
-  @Preconditions
-    None.
-
-  @Returns
-    None.
-
-  @Param
-    None.
-
-  @Example
-    <code>
-    // Sets the RD2 as an output
-    ACC_CS_SetDigitalOutput();
-    </code>
-
-*/
-#define ACC_CS_SetDigitalOutput()   ( TRISDCLR = (1 << 2) )
-/**
-  @Summary
     Sets the GPIO pin, RD4, high using LATD4.
 
   @Description
@@ -2700,40 +2425,6 @@ inline static void ACC_CS_SetValue(bool value)
 */
 #define ACC_MISO_SetLow()           ( LATDCLR = (1 << 4) )
 
-/**
-  @Summary
-    Sets a value to the GPIO pin.
-
-  @Description
-    Sets or Resets the GPIO pin, RD4, low or high using LATD4.
-
-  @Preconditions
-    The RD4 must be set to an output.
-
-  @Returns
-    None.
-
-  @Param
-    bool value; : value to be set to the GPIO pin.
-
-  @Example
-    <code>
-    // Set RD4 to low.
-    ACC_MISO_SetValue(false);
-    </code>
-
-*/
-inline static void ACC_MISO_SetValue(bool value)
-{
-  if(value)
-  {
-    ACC_MISO_SetHigh();
-  }
-  else
-  {
-    ACC_MISO_SetLow();
-  }
-}
 
 /**
   @Summary

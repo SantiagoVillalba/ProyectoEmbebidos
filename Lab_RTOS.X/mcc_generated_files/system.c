@@ -83,12 +83,13 @@
 #include "pin_manager.h"
 #include "clock.h"
 #include "system.h"
-#include "spi1.h"
-#include "usb/usb.h"
+#include "adc1.h"
+#include "rtcc.h"
 #include "interrupt_manager.h"
 #include "exceptions.h"
-#include "rtcc.h"
-#include "adc1.h"
+#include "usb/usb.h"
+#include "spi1.h"
+#include "memory/flash.h"
 
 void SYSTEM_Initialize(void)
 {

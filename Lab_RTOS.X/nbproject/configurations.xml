@@ -21,6 +21,10 @@
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
                      projectFiles="true">
+        <logicalFolder name="memory" displayName="memory" projectFiles="true">
+          <itemPath>mcc_generated_files/memory/flash_demo.h</itemPath>
+          <itemPath>mcc_generated_files/memory/flash.h</itemPath>
+        </logicalFolder>
         <logicalFolder name="usb" displayName="usb" projectFiles="true">
           <itemPath>mcc_generated_files/usb/usb_hal_pic32mm.h</itemPath>
           <itemPath>mcc_generated_files/usb/usb_ch9.h</itemPath>
@@ -77,6 +81,10 @@
       <logicalFolder name="MCC Generated Files"
                      displayName="MCC Generated Files"
                      projectFiles="true">
+        <logicalFolder name="memory" displayName="memory" projectFiles="true">
+          <itemPath>mcc_generated_files/memory/flash.c</itemPath>
+          <itemPath>mcc_generated_files/memory/flash_demo.c</itemPath>
+        </logicalFolder>
         <logicalFolder name="usb" displayName="usb" projectFiles="true">
           <itemPath>mcc_generated_files/usb/usb_device_events.c</itemPath>
           <itemPath>mcc_generated_files/usb/usb_device.c</itemPath>
@@ -123,7 +131,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>snap</platformTool>
         <languageToolchain>XC32</languageToolchain>
-        <languageToolchainVersion>4.00</languageToolchainVersion>
+        <languageToolchainVersion>4.10</languageToolchainVersion>
         <platform>3</platform>
       </toolsSet>
       <packs>

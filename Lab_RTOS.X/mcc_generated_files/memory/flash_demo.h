@@ -1,25 +1,3 @@
-/**
-  @Generated PIC24 / dsPIC33 / PIC32MM MCUs Header File
-
-  @Company:
-    Microchip Technology Inc.
-
-  @File Name:
-    mcc.h
-
-  @Summary:
-    This is the mcc.h file generated using PIC24 / dsPIC33 / PIC32MM MCUs
-
-  @Description:
-    This file will be removed in future MCC releases. Use system.h instead.
-    Generation Information :
-        Product Revision  :  PIC24 / dsPIC33 / PIC32MM MCUs - 1.167.0
-        Device            :  PIC32MM0256GPM064
-    The generated drivers are tested against the following:
-        Compiler          :  XC16 v1.50
-        MPLAB             :  MPLAB X v5.35
-*/
-
 /*
     (c) 2020 Microchip Technology Inc. and its subsidiaries. You may use this
     software and any derivatives exclusively with Microchip products.
@@ -42,27 +20,4 @@
     TERMS.
 */
 
-#ifndef MCC_H
-#define	MCC_H
-#include <xc.h>
-#include "system.h"
-#include "clock.h"
-#include "pin_manager.h"
-#include <stdint.h>
-#include <stdbool.h>
-
-#include "adc1.h"
-#include "rtcc.h"
-#include "interrupt_manager.h"
-#include "exceptions.h"
-#include "usb/usb.h"
-#include "spi1.h"
-#include "memory/flash.h"
-#include "watchdog.h"
-
-#warning "This file will be removed in future MCC releases. Use system.h instead."
-
-#endif	/* MCC_H */
-/**
- End of File
-*/
+void FlashDemo();

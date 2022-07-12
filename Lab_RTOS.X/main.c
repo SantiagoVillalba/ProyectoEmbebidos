@@ -23,23 +23,12 @@
 #include "mcc_generated_files/pin_manager.h"
 #include "Framework/Accelerometer.h"
 
-// A ELIMINAR:
-
-void UsbController( void *p_param );
-void LedCola( void *p_param );
-void vUSBService (TimerHandle_t xTimer);
-
-SemaphoreHandle_t semUsb ;
-SemaphoreHandle_t semLed ;
-char recibir[50];
-uint8_t mensaje;
-QueueHandle_t queue;
-
 /*
                     Variables del proyecto:
 */
 short cuadrantePlayer;
 short cuadranteMaquina;
+int volatile highScoreCounter = 0;
 
 float radio;
 float anguloR;
@@ -49,12 +38,17 @@ float velocidadY = 0;
 float velocidadTan = 0;
 float velocidadRad = 0;
 
+int counterDif = 1;
 int dificultadDelayMS = 3000;
 
 SemaphoreHandle_t semCuadrante ;
+SemaphoreHandle_t semDificultadDelay;
+SemaphoreHandle_t semTerminoJuego;
+SemaphoreHandle_t arrancoElEnemigo;
 
 void vUpdatePosition (TimerHandle_t xTimer);
 void IAEnemiga( void *p_param );
+void HighScore( void *p_param );
 void prenderLed();
 /*
                          Main application
@@ -75,22 +69,6 @@ int main(void)
     
     while(!ACCEL_init());
     
-    // Anterior Lab:
-    
-    queue = xQueueCreate(20,sizeof(prender_led));
-    /* Create the tasks defined within this file. */
-    xTaskCreate( UsbController, "task2", configMINIMAL_STACK_SIZE+500, NULL, tskIDLE_PRIORITY+2, NULL );
-    xTaskCreate( LedCola, "task3", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL );
-    
-    TimerHandle_t viejo = xTimerCreate ("Service USB",pdMS_TO_TICKS(5UL),pdTRUE, NULL , vUSBService);
-    xTimerStart( viejo, 0 );
-    
- 
-    semUsb = xSemaphoreCreateCounting(1,0);
-    semLed = xSemaphoreCreateCounting(1,1);
-    
-    // Proyecto
-    
     //radio = rand() % 0.05;
     //while(radio<110){
         //radio = rand() % 0.05;
@@ -106,9 +84,19 @@ int main(void)
     semCuadrante = xSemaphoreCreateBinary();
     xSemaphoreGive( semCuadrante );
     
+    arrancoElEnemigo = xSemaphoreCreateBinary();
+    xSemaphoreGive( arrancoElEnemigo );
+    
+    semDificultadDelay = xSemaphoreCreateBinary();
+    xSemaphoreGive( semDificultadDelay );
+    
+    semTerminoJuego = xSemaphoreCreateCounting(1,0);
+    
     prenderLed();
     
-    xTaskCreate( IAEnemiga, "task1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+7, NULL );
+    xTaskCreate( IAEnemiga, "task1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+3, NULL );
+    
+    xTaskCreate( HighScore, "task2", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL );
     
     TimerHandle_t TimerPosicion = xTimerCreate ("Update Position",pdMS_TO_TICKS(1UL),pdTRUE, NULL , vUpdatePosition);
     xTimerStart( TimerPosicion, 0 );
@@ -124,6 +112,28 @@ int main(void)
     for(;;);
 }
 
+void HighScore( void *p_param ){
+    // Se espera a que arranque a correr el enemigo.
+    xSemaphoreTake( arrancoElEnemigo, portMAX_DELAY);
+    
+    while(1){
+        //xSemaphoreTake( semTerminoJuego, portMAX_DELAY);
+        
+        vTaskDelay(pdMS_TO_TICKS(1000UL));
+        highScoreCounter++;
+        counterDif++;  
+        if(counterDif == 10 ){
+            xSemaphoreTake( semDificultadDelay, portMAX_DELAY);
+            if(dificultadDelayMS > 400){
+                dificultadDelayMS -= 400;
+                counterDif = 1;
+            }
+            xSemaphoreGive( semDificultadDelay );
+        }
+    }
+    
+}
+
 void IAEnemiga( void *p_param ){
     vTaskDelay(pdMS_TO_TICKS(1000UL));
     cuadranteMaquina = (rand() % 8) + 1;
@@ -132,20 +142,18 @@ void IAEnemiga( void *p_param ){
         cuadranteMaquina = (rand() % 8) + 1;
     }
     xSemaphoreGive( semCuadrante );
+    xSemaphoreGive( arrancoElEnemigo );
     while(1){
-        vTaskDelay(pdMS_TO_TICKS(dificultadDelayMS));
+        int delaydif;
+        xSemaphoreTake( semDificultadDelay, portMAX_DELAY);
+        delaydif = dificultadDelayMS;
+        xSemaphoreGive( semDificultadDelay );
+        vTaskDelay(pdMS_TO_TICKS(delaydif));
         // logica del enemigo
         xSemaphoreTake( semCuadrante, portMAX_DELAY);
         if(cuadranteMaquina == cuadrantePlayer){
             // se termino el juego perdiste;
-            settingRGB(1,Red);
-            settingRGB(2,Red);
-            settingRGB(3,Red);
-            settingRGB(4,Red);
-            settingRGB(5,Red);
-            settingRGB(6,Red);
-            settingRGB(7,Red);
-            settingRGB(8,Red);
+            xSemaphoreGive( semTerminoJuego );
         }else{
             int contadorRecorroNormal = 0;
             int punteroNormal = cuadranteMaquina;
@@ -185,8 +193,8 @@ void IAEnemiga( void *p_param ){
                 }
             }
         }
-        xSemaphoreGive( semCuadrante );
         settingRGB(cuadranteMaquina,Red);
+        xSemaphoreGive( semCuadrante );
     }
 }
 
@@ -207,10 +215,10 @@ float arcoTangente(float x, float y){
 void prenderLed(){
     short cuadranteApagar;
     
-    if(anguloR > (float)M_PI*2){
+    if(anguloR >= (float)M_PI*2){
         anguloR -= (float)2*M_PI;
     }else if(anguloR < 0){
-        anguloR += (float)M_PI*2;
+        anguloR += (float)2*M_PI;
     }
     
     // protegerlo con semaforos
@@ -266,12 +274,11 @@ void prenderLed(){
     }
     if(cuadrantePlayer == cuadranteMaquina){
         // perder
-        
+        xSemaphoreGive( semTerminoJuego );
     }else{
-        
+        settingRGB(cuadrantePlayer,White);
     }
     xSemaphoreGive( semCuadrante );
-    settingRGB(cuadrantePlayer,White);
 }
 
 void vUpdatePosition (TimerHandle_t xTimer){
@@ -302,7 +309,6 @@ void vUpdatePosition (TimerHandle_t xTimer){
                 radio = 0.05;
                 velocidadRad = 0;
             }
-            
             x = radio * cos(anguloR);
             y = radio * sin(anguloR);
             velocidadX = velocidadRad*cos(anguloR) - velocidadTan*sin(anguloR);
@@ -329,242 +335,6 @@ void vUpdatePosition (TimerHandle_t xTimer){
     }
     
 }
-
-
-
-void vAgregarQueue (TimerHandle_t xTimer){
-    prender_led* mem = (prender_led*)pvTimerGetTimerID(xTimer);
-    xQueueSendToBack(queue,mem,0);
-    free((void *)mem);
-}
-
-void vUSBService (TimerHandle_t xTimer){
-    if((USBGetDeviceState() < CONFIGURED_STATE) ||
-               (USBIsDeviceSuspended() == true))
-            {
-                //continue;   //go back to the top of the while loop
-            }
-            else
-            {
-                CDCTxService();
-                mensaje = getsUSBUSART(recibir, sizeof(recibir));
-                if(mensaje!= 0){
-                    recibir[mensaje] = '\0';
-                    xSemaphoreGive( semUsb );
-                }
-            }
-}
-
-void LedCola( void *p_param ){
-    while(1){
-        prender_led aMod;
-        xQueueReceive(queue,&aMod,portMAX_DELAY);
-        //modificarLed( &aMod);    
-    }
-    
-}
-
-
-void checkUSBReady(){
-    while( !USBUSARTIsTxTrfReady()){
-        CDCTxService();
-        vTaskDelay(pdMS_TO_TICKS(3UL));
-    }
-}
-
-void UsbController( void *p_param ){
-    
-    while(1){
-        xSemaphoreTake( semUsb, portMAX_DELAY);
-        char nuevo[70];
-        Accel_t accel;
-        if(ACCEL_GetAccel (&accel)){
-            sprintf(nuevo,"\nEntrada de datos:\nx: %f\ny: %f\nz: %f\n",accel.Accel_X,accel.Accel_Y,accel.Accel_Z);
-            checkUSBReady();
-            putsUSBUSART(nuevo);
-        }else{
-            checkUSBReady();
-            putsUSBUSART("failed");
-
-        }
-    }
-    
-//    char interfazInicial[166];
-//    bool seSeteoHora = false;
-//    bool seSeteoLed = false;
-//    int opcion;
-//    bool primeraVez = true;
-//
-//    strcpy(interfazInicial, "\nEscoja el numero de la opcion\n1- Fijar la fecha"
-//            " y hora del reloj \n2- Encender y apagar un led del 1 al 8"
-//            "\n3- Consultar estado fecha y hora del ultimo LED modificado\n");
-    
-//    while (1)
-//    {   
-//        //xSemaphoreTake( semUsb, portMAX_DELAY);
-//        bool formatoCorrecto = true;
-//        int formato;
-//        int hh, mm, ss;
-//        int dd, month, yy;
-//        struct tm initialTime;
-//        int num;
-//        int delay;
-//        uint8_t color;
-//        struct tm currentTime;
-//        time_t tiempo;
-//        colors colr;
-//        char print[82];
-//        struct tm modificado;
-//        prender_led ledM;
-//        prender_led* memDinamic;
-//        app_register_t ultLed;
-        
-//        if(primeraVez){
-//            xSemaphoreTake( semUsb, portMAX_DELAY);
-//            checkUSBReady();
-//            putsUSBUSART(interfazInicial);
-//            primeraVez = false;
-//        }
-//        xSemaphoreTake( semUsb, portMAX_DELAY);
-//        formato = sscanf(recibir,"%u",&opcion);
-//        if(formato!= 1 || mensaje > 1){
-//            checkUSBReady();
-//            putsUSBUSART("\nFormato incorrecto,envie devuelta\n");
-//        }else{
-//            switch(opcion){
-//                case 1: 
-//                    do{
-//                        checkUSBReady();
-//                        putsUSBUSART("\nEl formato para ingresar la hora y "
-//                                "fecha es el siguiente: hh;mm;ss;dd;month;yyyy\n");
-//                        xSemaphoreTake( semUsb, portMAX_DELAY);
-//                        formatoCorrecto = true;
-//                        formato = sscanf(recibir,"%d;%d;%d;%d;%d;%4d", &hh,&mm,&ss,&dd,&month,&yy);
-//                        if(formato!= 6 || mensaje > 19){
-//                            checkUSBReady();
-//                            putsUSBUSART("\nFormato incorrecto,envie devuelta\n");
-//                            formatoCorrecto = false;
-//                        }else{
-//                            if(!horaYfechaCorrecta(hh,mm,ss,dd,month,yy)){
-//                                checkUSBReady();
-//                                putsUSBUSART("\nFecha y Hora incorrectas,envie devuelta\n");
-//                                formatoCorrecto = false;
-//                            }
-//                        }
-//                    }while(!formatoCorrecto);
-//                    
-//                    initialTime.tm_year = yy - 1900;
-//                    initialTime.tm_mday = dd;
-//                    initialTime.tm_mon = month-1;
-//                    initialTime.tm_hour = hh;
-//                    initialTime.tm_min = mm;
-//                    initialTime.tm_sec = ss;
-//                    initialTime.tm_isdst = -1;  
-//                    RTCC_TimeSet(&initialTime);
-//                    checkUSBReady();
-//                    putsUSBUSART("\nOperacion hecha\n");
-//                    seSeteoHora = true;
-//                    checkUSBReady();
-//                    putsUSBUSART(interfazInicial);
-//                    break;
-//                case 2:
-//                    if(!seSeteoHora){
-//                        checkUSBReady();
-//                        putsUSBUSART("\nAntes de usar esta opcion debe de setear la hora\n");
-//                        break;
-//                    }
-//                    do{
-//                        checkUSBReady();
-//                        putsUSBUSART("\nEl formato para encender y apagar un "
-//                                "led es el siguiente: (numero del led del 1 al 8)"
-//                                ";(numero del color);(segundos hasta que se prenda <= 60) \n 1 es Rojo,"
-//                                "2 es Verde, 3 es Azul, 4 es Blanco y 5 es Negro \n");
-//                        xSemaphoreTake( semUsb, portMAX_DELAY);
-//                        formatoCorrecto = true;
-//                        formato = sscanf(recibir,"%d;%d;%d",&num,&color,&delay);
-//                        if(formato != 3){
-//                            checkUSBReady();
-//                            putsUSBUSART("\nFormato incorrecto,envie devuelta\n");
-//                            formatoCorrecto = false;
-//                        }else{
-//                            if(!setearColor( color, &colr)){
-//                                checkUSBReady();
-//                                putsUSBUSART("\nColor incorrecto\n");
-//                                formatoCorrecto = false;
-//                            }
-//                            if(num<1 || num >8){
-//                                checkUSBReady();
-//                                putsUSBUSART("\nNumero incorrecto\n");
-//                                formatoCorrecto = false;
-//                            }
-//                            if(delay < 0 || delay > 60){
-//                                checkUSBReady();
-//                                putsUSBUSART("\nSe pasa del minuto, use una cantidad menor\n");
-//                                formatoCorrecto = false;
-//                            }
-//                            if(!RTCC_TimeGet(&currentTime)){
-//                                checkUSBReady();
-//                                putsUSBUSART("\nNo se pudo conseguir la hora\n");
-//                                formatoCorrecto = false;
-//                            }
-//                        }
-//                    }while(!formatoCorrecto);
-//                    ledM.color = color;
-//                    ledM.led = num;
-//                    ledM.colr = colr;
-//                    if(delay == 0){
-//                        xQueueSendToBack(queue,&ledM,0);
-//                    }else{
-//                        memDinamic = (prender_led*)malloc(sizeof(prender_led));
-//                        memDinamic->color = ledM.color;
-//                        memDinamic->led = ledM.led;
-//                        memDinamic->colr = ledM.colr;
-//                        TimerHandle_t x = xTimerCreate ("DelayLed",pdMS_TO_TICKS(delay*1000),pdFALSE, (void *) memDinamic , vAgregarQueue);
-//                        xTimerStart( x, 0 );
-//                    }
-//                    
-//                    checkUSBReady();
-//                    putsUSBUSART("\nOperacion hecha\n");
-//                    seSeteoLed = true;
-//                    checkUSBReady();
-//                    putsUSBUSART(interfazInicial);
-//                    break;
-//                    
-//                case 3:
-//                    if(!seSeteoLed){
-//                        checkUSBReady();
-//                        putsUSBUSART("\nAntes de usar esta opcion es necesario cambiar un led\n");
-//                        break;
-//                    }
-//                    
-//                    checkUSBReady();
-//                    putsUSBUSART("\nEscriba cualquier letra para continuar\n");
-//                    xSemaphoreTake( semUsb, portMAX_DELAY);
-//                    if(!seSeteoLed){
-//                        checkUSBReady();
-//                        putsUSBUSART("\nAntes de usar esta opcion es necesario cambiar un led\n");
-//                        break;
-//                    }
-//                    ultLed = ObtenerUltimoModificado();
-//                    time_t aux = (time_t)ultLed.time;
-//                    modificado = *gmtime (&aux);
-//                    sprintf(print,"\nLed elegido:%d, Color elegido:"
-//                            " %d, Hora: %u:%u:%u, Fecha: %u-%u-%u \n"
-//                            ,ultLed.led,ultLed.color,modificado.tm_hour,modificado.tm_min,
-//                            modificado.tm_sec,modificado.tm_mday,modificado.tm_mon + 1,modificado.tm_year + 1900);
-//                    checkUSBReady();
-//                    putsUSBUSART(print);
-//                    checkUSBReady();
-//                    putsUSBUSART(interfazInicial);
-//                    break;
-//                default:
-//                    checkUSBReady();
-//                    putsUSBUSART("\nLa opcion elegida no esta contemplada\n");
-//            }
-//        }
-//    }
-}
-
 
 void vApplicationMallocFailedHook( void ){
     /* vApplicationMallocFailedHook() will only be called if
