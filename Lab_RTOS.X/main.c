@@ -115,11 +115,25 @@ int main(void)
     for(;;);
 }
 
+float arcoTangente(float x, float y){
+    if(x > 0 && y > 0){
+        return atan((float)y/x) ;
+    }else if(x = 0 && y > 0){
+        return (float)M_PI / 2;
+    }else if(x < 0){
+        return atan((float)y/x) + (float)M_PI;
+    }else if(x = 0 && y < 0){
+        return (float)3*M_PI / 2 ;
+    }else if(x > 0 && y < 0){
+        return atan((float)y/x) + (float)2*M_PI;
+    }
+}
+
 void prenderLed(){
     short cuadranteApagar;
     
     if(anguloR > (float)M_PI*2){
-        anguloR -= (float)M_PI;
+        anguloR -= (float)2*M_PI;
     }else if(anguloR < 0){
         anguloR += (float)M_PI*2;
     }
@@ -127,62 +141,54 @@ void prenderLed(){
     // protegerlo con semaforos
     if(anguloR >= 0 && anguloR < (float)M_PI/4){
         if(cuadrantePlayer != 1){
-            //settingRGB(cuadrantePlayer,Black);
             cuadranteApagar = cuadrantePlayer;
             cuadrantePlayer = 1;
-            settingRGB(1,White);
+            settingRGB(cuadranteApagar,Black);
         }
     }else if(anguloR >= (float)M_PI/4 && anguloR < (float)M_PI/2){
-        if(cuadrantePlayer != 2){
-            //settingRGB(cuadrantePlayer,Black);
+        if(cuadrantePlayer != 8){
             cuadranteApagar = cuadrantePlayer;
-            cuadrantePlayer = 2;
-            settingRGB(2,White);
+            cuadrantePlayer = 8;
+            settingRGB(cuadranteApagar,Black);
         }
     }else if(anguloR >= (float)M_PI/2 && anguloR < (float)3*M_PI/4){
-        if(cuadrantePlayer != 3){
-            //settingRGB(cuadrantePlayer,Black);
+        if(cuadrantePlayer != 7){
             cuadranteApagar = cuadrantePlayer;
-            cuadrantePlayer = 3;
-            settingRGB(3,White);
+            cuadrantePlayer = 7;
+            settingRGB(cuadranteApagar,Black);
         }
     }else if(anguloR >= (float)3*M_PI/4 && anguloR < (float)M_PI){
-        if(cuadrantePlayer != 4){
-            //settingRGB(cuadrantePlayer,Black);
+        if(cuadrantePlayer != 6){
             cuadranteApagar = cuadrantePlayer;
-            cuadrantePlayer = 4;
-            settingRGB(4,White);
+            cuadrantePlayer = 6;
+            settingRGB(cuadranteApagar,Black);
         }
     }else if(anguloR >= (float)M_PI && anguloR < (float)5*M_PI/4){
         if(cuadrantePlayer != 5){
-            //settingRGB(cuadrantePlayer,Black);
             cuadranteApagar = cuadrantePlayer;
             cuadrantePlayer = 5;
-            settingRGB(5,White);
+            settingRGB(cuadranteApagar,Black);
         }
     }else if(anguloR >= (float)5*M_PI/4 && anguloR < (float)3*M_PI/2){
-        if(cuadrantePlayer != 6){
-            //settingRGB(cuadrantePlayer,Black);
+        if(cuadrantePlayer != 4){
             cuadranteApagar = cuadrantePlayer;
-            cuadrantePlayer = 6;
-            settingRGB(6,White);
+            cuadrantePlayer = 4;
+            settingRGB(cuadranteApagar,Black);
         }
     }else if(anguloR >= (float)3*M_PI/2 && anguloR < (float)7*M_PI/4){
-        if(cuadrantePlayer != 7){
-            //settingRGB(cuadrantePlayer,Black);
+        if(cuadrantePlayer != 3){
             cuadranteApagar = cuadrantePlayer;
-            cuadrantePlayer = 7;
-            settingRGB(7,White);
+            cuadrantePlayer = 3;
+            settingRGB(cuadranteApagar,Black);
         }
     }else if(anguloR >= (float)7*M_PI/4){
-        if(cuadrantePlayer != 8){
-            //settingRGB(cuadrantePlayer,Black);
+        if(cuadrantePlayer != 2){
             cuadranteApagar = cuadrantePlayer;
-            cuadrantePlayer = 8;
-            settingRGB(8,White);
+            cuadrantePlayer = 2;
+            settingRGB(cuadranteApagar,Black);
         }
     }
-    settingRGB(cuadranteApagar,Black);
+    settingRGB(cuadrantePlayer,White);
 }
 
 void vUpdatePosition (TimerHandle_t xTimer){
@@ -198,25 +204,9 @@ void vUpdatePosition (TimerHandle_t xTimer){
     float varPX,varPY;
     
     if(ACCEL_GetAccel (&accel)){
-        if(radio>=0.0011){
-            if(!vieneDePolar){
-                //conversion a polar
-                radio = sqrt(pow(x,2)+pow(y,2));
-                if(x > 0 && y > 0){
-                    anguloR = atan(y/x) ;
-                }else if(x = 0 && y > 0){
-                    anguloR = (float)M_PI / 2;
-                }else if(x < 0){
-                    anguloR = atan(y/x) + (float)M_PI;
-                }else if(x = 0 && y < 0){
-                    anguloR = (float)3*M_PI / 2 ;
-                }else if(x > 0 && y < 0){
-                    anguloR = atan(y/x) + (float)2*M_PI;
-                }
-                vieneDePolar = true;
-            }
-            acRadial = cos(accel.Accel_X * -0.1 ) + sin(accel.Accel_Y * -0.1);
-            acTan = cos(accel.Accel_Y * -0.1) - sin(accel.Accel_X * -0.1);
+        if(radio>=0.03){
+            acRadial = accel.Accel_X* -0.1*cos( anguloR ) + accel.Accel_Y * -0.1 *sin( anguloR );
+            acTan = accel.Accel_Y*-0.1*cos( anguloR ) - accel.Accel_X * -0.1*sin( anguloR );
             varVelocidadTan = acTan * 0.001;
             varVelocidadRadial = acRadial * 0.001;
             velocidadTan += varVelocidadTan;
@@ -229,13 +219,16 @@ void vUpdatePosition (TimerHandle_t xTimer){
                 radio = 0.05;
                 velocidadRad = 0;
             }
+            
         }else{
-            if(vieneDePolar){
-                // conversion a cartesiano;
-                x = radio * cos(anguloR);
-                y = radio * sin(anguloR);
-                vieneDePolar = false;
-            }
+            
+            // conversion a cartesiano;
+            x = radio * cos(anguloR);
+            y = radio * sin(anguloR);
+            velocidadX = velocidadRad*cos(anguloR) - velocidadTan*sin(anguloR);
+            velocidadY = velocidadTan*cos(anguloR) + velocidadRad*sin(anguloR);
+           
+
             varVX = accel.Accel_X * -0.1 * 0.001;
             varVY = accel.Accel_Y * -0.1 * 0.001;
             velocidadX += varVX;
@@ -245,17 +238,9 @@ void vUpdatePosition (TimerHandle_t xTimer){
             x += varPX;
             y += varPY;
             
-            if(x > 0 && y > 0){
-                anguloR = atan(y/x) ;
-            }else if(x = 0 && y > 0){
-                anguloR = (float)M_PI / 2;
-            }else if(x < 0){
-                anguloR = atan(y/x) + (float)M_PI;
-            }else if(x = 0 && y < 0){
-                anguloR = (float)3*M_PI / 2 ;
-            }else if(x > 0 && y < 0){
-                anguloR = atan(y/x) + (float)2*M_PI;
-            }
+            radio = sqrt(pow(x,2)+pow(y,2));
+            
+            anguloR = arcoTangente(x,y);
         }
         prenderLed();
     }
