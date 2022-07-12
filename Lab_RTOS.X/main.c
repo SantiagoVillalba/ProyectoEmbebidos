@@ -29,6 +29,7 @@
 short cuadrantePlayer;
 short cuadranteMaquina;
 int volatile highScoreCounter = 0;
+int volatile historicHighScoreCounter = 0;
 
 float radio;
 float anguloR;
@@ -41,11 +42,13 @@ float velocidadRad = 0;
 int counterDif = 1;
 int dificultadDelayMS = 3000;
 
+SemaphoreHandle_t semTerminoJuego;
+SemaphoreHandle_t semIniciarJuego;
 SemaphoreHandle_t semCuadrante ;
 SemaphoreHandle_t semDificultadDelay;
-SemaphoreHandle_t semTerminoJuego;
 SemaphoreHandle_t arrancoElEnemigo;
 
+void InterfazGeneral( void *p_param );
 void vUpdatePosition (TimerHandle_t xTimer);
 void IAEnemiga( void *p_param );
 void HighScore( void *p_param );
@@ -69,18 +72,6 @@ int main(void)
     
     while(!ACCEL_init());
     
-    //radio = rand() % 0.05;
-    //while(radio<110){
-        //radio = rand() % 0.05;
-    //}
-    anguloR = rand() * ((float)M_PI*2) / RAND_MAX  ;
-    // esta hardcoded
-    radio = 0.03;
-    anguloR = (float)3*M_PI/4;
-    // Convertir esto en cartesiana.
-    x = radio * cos(anguloR);
-    y = radio * sin(anguloR);
-    
     semCuadrante = xSemaphoreCreateBinary();
     xSemaphoreGive( semCuadrante );
     
@@ -92,14 +83,9 @@ int main(void)
     
     semTerminoJuego = xSemaphoreCreateCounting(1,0);
     
-    prenderLed();
-    
-    xTaskCreate( IAEnemiga, "task1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+3, NULL );
-    
-    xTaskCreate( HighScore, "task2", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL );
-    
-    TimerHandle_t TimerPosicion = xTimerCreate ("Update Position",pdMS_TO_TICKS(1UL),pdTRUE, NULL , vUpdatePosition);
-    xTimerStart( TimerPosicion, 0 );
+    semIniciarJuego= xSemaphoreCreateCounting(1,0);
+            
+    xTaskCreate( InterfazGeneral, "task0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+10, NULL );
     
     /* Finally start the scheduler. */
     vTaskStartScheduler( );
@@ -110,6 +96,45 @@ int main(void)
     to be created.  See the memory management section on the FreeRTOS web site
     for more details. */
     for(;;);
+}
+
+void InterfazGeneral( void *p_param ){
+    TaskHandle_t IA;
+    TaskHandle_t HighScore;
+    while(1){
+        xSemaphoreTake( semIniciarJuego, portMAX_DELAY)
+        //radio = rand() % 0.05;
+        //while(radio<110){
+            //radio = rand() % 0.05;
+        //}
+        //anguloR = rand() * ((float)M_PI*2) / RAND_MAX  ;
+        
+        // esta hardcoded
+        radio = 0.03;
+        anguloR = (float)3*M_PI/4;
+        
+        // Convertir esto en cartesiana.
+        x = radio * cos(anguloR);
+        y = radio * sin(anguloR);
+
+        prenderLed();
+        
+        xTaskCreate( IAEnemiga, "task1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+3, &IA );
+    
+        xTaskCreate( HighScore, "task2", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &HighScore );
+
+        TimerHandle_t TimerPosicion = xTimerCreate ("Update Position",pdMS_TO_TICKS(1UL),pdTRUE, NULL , vUpdatePosition);
+        xTimerStart( TimerPosicion, 0 );
+        
+        xSemaphoreTake( semTerminoJuego, portMAX_DELAY);
+        vTaskDelete( IA );
+        vTaskDelete( HighScore );
+        xTimerDelete( TimerPosicion , 0 );
+        if(highScoreCounter > historicHighScoreCounter){
+            historicHighScoreCounter = highScoreCounter;
+        }
+        
+    }
 }
 
 void HighScore( void *p_param ){
