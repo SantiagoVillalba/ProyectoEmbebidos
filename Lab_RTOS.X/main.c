@@ -23,11 +23,11 @@
 #include "mcc_generated_files/pin_manager.h"
 #include "Framework/Accelerometer.h"
 
+// A ELIMINAR:
+
 void UsbController( void *p_param );
 void LedCola( void *p_param );
 void vUSBService (TimerHandle_t xTimer);
-
-void vUpdatePosition (TimerHandle_t xTimer);
 
 SemaphoreHandle_t semUsb ;
 SemaphoreHandle_t semLed ;
@@ -36,7 +36,7 @@ uint8_t mensaje;
 QueueHandle_t queue;
 
 /*
-                    Variables posicion 
+                    Variables del proyecto:
 */
 short cuadrantePlayer;
 short cuadranteMaquina;
@@ -49,7 +49,12 @@ float velocidadY = 0;
 float velocidadTan = 0;
 float velocidadRad = 0;
 
-bool vieneDePolar;
+int dificultadDelayMS = 3000;
+
+SemaphoreHandle_t semCuadrante ;
+
+void vUpdatePosition (TimerHandle_t xTimer);
+void IAEnemiga( void *p_param );
 void prenderLed();
 /*
                          Main application
@@ -74,11 +79,11 @@ int main(void)
     
     queue = xQueueCreate(20,sizeof(prender_led));
     /* Create the tasks defined within this file. */
-    xTaskCreate( UsbController, "task2", configMINIMAL_STACK_SIZE+0.05, NULL, tskIDLE_PRIORITY+2, NULL );
+    xTaskCreate( UsbController, "task2", configMINIMAL_STACK_SIZE+500, NULL, tskIDLE_PRIORITY+2, NULL );
     xTaskCreate( LedCola, "task3", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL );
     
-    TimerHandle_t z = xTimerCreate ("Service USB",pdMS_TO_TICKS(5UL),pdTRUE, NULL , vUSBService);
-    xTimerStart( z, 0 );
+    TimerHandle_t viejo = xTimerCreate ("Service USB",pdMS_TO_TICKS(5UL),pdTRUE, NULL , vUSBService);
+    xTimerStart( viejo, 0 );
     
  
     semUsb = xSemaphoreCreateCounting(1,0);
@@ -90,7 +95,6 @@ int main(void)
     //while(radio<110){
         //radio = rand() % 0.05;
     //}
-    vieneDePolar = true;
     anguloR = rand() * ((float)M_PI*2) / RAND_MAX  ;
     // esta hardcoded
     radio = 0.03;
@@ -99,10 +103,15 @@ int main(void)
     x = radio * cos(anguloR);
     y = radio * sin(anguloR);
     
+    semCuadrante = xSemaphoreCreateBinary();
+    xSemaphoreGive( semCuadrante );
+    
     prenderLed();
     
-    TimerHandle_t y = xTimerCreate ("Update Position",pdMS_TO_TICKS(1UL),pdTRUE, NULL , vUpdatePosition);
-    xTimerStart( y, 0 );
+    xTaskCreate( IAEnemiga, "task1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+7, NULL );
+    
+    TimerHandle_t TimerPosicion = xTimerCreate ("Update Position",pdMS_TO_TICKS(1UL),pdTRUE, NULL , vUpdatePosition);
+    xTimerStart( TimerPosicion, 0 );
     
     /* Finally start the scheduler. */
     vTaskStartScheduler( );
@@ -115,17 +124,83 @@ int main(void)
     for(;;);
 }
 
+void IAEnemiga( void *p_param ){
+    vTaskDelay(pdMS_TO_TICKS(1000UL));
+    cuadranteMaquina = (rand() % 8) + 1;
+    xSemaphoreTake( semCuadrante, portMAX_DELAY);
+    while(cuadranteMaquina == cuadrantePlayer){
+        cuadranteMaquina = (rand() % 8) + 1;
+    }
+    xSemaphoreGive( semCuadrante );
+    while(1){
+        vTaskDelay(pdMS_TO_TICKS(dificultadDelayMS));
+        // logica del enemigo
+        xSemaphoreTake( semCuadrante, portMAX_DELAY);
+        if(cuadranteMaquina == cuadrantePlayer){
+            // se termino el juego perdiste;
+            settingRGB(1,Red);
+            settingRGB(2,Red);
+            settingRGB(3,Red);
+            settingRGB(4,Red);
+            settingRGB(5,Red);
+            settingRGB(6,Red);
+            settingRGB(7,Red);
+            settingRGB(8,Red);
+        }else{
+            int contadorRecorroNormal = 0;
+            int punteroNormal = cuadranteMaquina;
+            bool encuentroNormal = false;
+            
+            int contadorRecorroDerAIzq = 0;
+            int punteroDerAIzq = cuadranteMaquina;
+            bool encuentroDerAIzq = false;
+            while(!encuentroNormal || !encuentroDerAIzq){
+                if(punteroNormal != cuadrantePlayer){
+                    punteroNormal = (punteroNormal % 8) + 1;
+                    contadorRecorroNormal++;
+                }else{
+                    encuentroNormal = true;
+                }
+                
+                if(punteroDerAIzq != cuadrantePlayer){
+                    if(punteroDerAIzq > 1){
+                        punteroDerAIzq = punteroDerAIzq - 1;
+                    }else{
+                        punteroDerAIzq = 8;
+                    }
+                    contadorRecorroDerAIzq++;
+                }else{
+                    encuentroDerAIzq = true;
+                }
+            }
+            settingRGB(cuadranteMaquina,Black);
+            
+            if(contadorRecorroNormal <= contadorRecorroDerAIzq){
+                cuadranteMaquina = (cuadranteMaquina % 8) + 1;
+            }else{
+                if(cuadranteMaquina > 1){
+                    cuadranteMaquina = (cuadranteMaquina - 1);
+                }else{
+                    cuadranteMaquina = 8;
+                }
+            }
+        }
+        xSemaphoreGive( semCuadrante );
+        settingRGB(cuadranteMaquina,Red);
+    }
+}
+
 float arcoTangente(float x, float y){
     if(x > 0 && y > 0){
-        return atan((float)y/x) ;
+        return atan((float)(y/x)) ;
     }else if(x = 0 && y > 0){
-        return (float)M_PI / 2;
+        return (float)(M_PI / 2);
     }else if(x < 0){
-        return atan((float)y/x) + (float)M_PI;
+        return atan((float)(y/x)) + (float)M_PI;
     }else if(x = 0 && y < 0){
-        return (float)3*M_PI / 2 ;
+        return (float)(3*M_PI / 2) ;
     }else if(x > 0 && y < 0){
-        return atan((float)y/x) + (float)2*M_PI;
+        return atan((float)(y/x)) + (float)2*M_PI;
     }
 }
 
@@ -139,55 +214,63 @@ void prenderLed(){
     }
     
     // protegerlo con semaforos
-    if(anguloR >= 0 && anguloR < (float)M_PI/4){
+    xSemaphoreTake( semCuadrante, portMAX_DELAY);
+    if(anguloR >= 0 && anguloR < (float)(M_PI/4)){
         if(cuadrantePlayer != 1){
             cuadranteApagar = cuadrantePlayer;
             cuadrantePlayer = 1;
             settingRGB(cuadranteApagar,Black);
         }
-    }else if(anguloR >= (float)M_PI/4 && anguloR < (float)M_PI/2){
+    }else if(anguloR >= (float)(M_PI/4) && anguloR < (float)(M_PI/2)){
         if(cuadrantePlayer != 8){
             cuadranteApagar = cuadrantePlayer;
             cuadrantePlayer = 8;
             settingRGB(cuadranteApagar,Black);
         }
-    }else if(anguloR >= (float)M_PI/2 && anguloR < (float)3*M_PI/4){
+    }else if(anguloR >= (float)(M_PI/2) && anguloR < (float)(3*M_PI/4)){
         if(cuadrantePlayer != 7){
             cuadranteApagar = cuadrantePlayer;
             cuadrantePlayer = 7;
             settingRGB(cuadranteApagar,Black);
         }
-    }else if(anguloR >= (float)3*M_PI/4 && anguloR < (float)M_PI){
+    }else if(anguloR >= (float)(3*M_PI/4) && anguloR < (float)M_PI){
         if(cuadrantePlayer != 6){
             cuadranteApagar = cuadrantePlayer;
             cuadrantePlayer = 6;
             settingRGB(cuadranteApagar,Black);
         }
-    }else if(anguloR >= (float)M_PI && anguloR < (float)5*M_PI/4){
+    }else if(anguloR >= (float)M_PI && anguloR < (float)(5*M_PI/4)){
         if(cuadrantePlayer != 5){
             cuadranteApagar = cuadrantePlayer;
             cuadrantePlayer = 5;
             settingRGB(cuadranteApagar,Black);
         }
-    }else if(anguloR >= (float)5*M_PI/4 && anguloR < (float)3*M_PI/2){
+    }else if(anguloR >= (float)(5*M_PI/4) && anguloR < (float)(3*M_PI/2)){
         if(cuadrantePlayer != 4){
             cuadranteApagar = cuadrantePlayer;
             cuadrantePlayer = 4;
             settingRGB(cuadranteApagar,Black);
         }
-    }else if(anguloR >= (float)3*M_PI/2 && anguloR < (float)7*M_PI/4){
+    }else if(anguloR >= (float)(3*M_PI/2) && anguloR < (float)(7*M_PI/4)){
         if(cuadrantePlayer != 3){
             cuadranteApagar = cuadrantePlayer;
             cuadrantePlayer = 3;
             settingRGB(cuadranteApagar,Black);
         }
-    }else if(anguloR >= (float)7*M_PI/4){
+    }else if(anguloR >= (float)(7*M_PI/4)){
         if(cuadrantePlayer != 2){
             cuadranteApagar = cuadrantePlayer;
             cuadrantePlayer = 2;
             settingRGB(cuadranteApagar,Black);
         }
     }
+    if(cuadrantePlayer == cuadranteMaquina){
+        // perder
+        
+    }else{
+        
+    }
+    xSemaphoreGive( semCuadrante );
     settingRGB(cuadrantePlayer,White);
 }
 
@@ -204,7 +287,7 @@ void vUpdatePosition (TimerHandle_t xTimer){
     float varPX,varPY;
     
     if(ACCEL_GetAccel (&accel)){
-        if(radio>=0.03){
+        if(radio>=0.015){
             acRadial = accel.Accel_X* -0.1*cos( anguloR ) + accel.Accel_Y * -0.1 *sin( anguloR );
             acTan = accel.Accel_Y*-0.1*cos( anguloR ) - accel.Accel_X * -0.1*sin( anguloR );
             varVelocidadTan = acTan * 0.001;
@@ -220,15 +303,13 @@ void vUpdatePosition (TimerHandle_t xTimer){
                 velocidadRad = 0;
             }
             
-        }else{
-            
-            // conversion a cartesiano;
             x = radio * cos(anguloR);
             y = radio * sin(anguloR);
             velocidadX = velocidadRad*cos(anguloR) - velocidadTan*sin(anguloR);
             velocidadY = velocidadTan*cos(anguloR) + velocidadRad*sin(anguloR);
-           
-
+            
+        }else{
+            
             varVX = accel.Accel_X * -0.1 * 0.001;
             varVY = accel.Accel_Y * -0.1 * 0.001;
             velocidadX += varVX;
@@ -238,9 +319,11 @@ void vUpdatePosition (TimerHandle_t xTimer){
             x += varPX;
             y += varPY;
             
-            radio = sqrt(pow(x,2)+pow(y,2));
-            
+            radio = (float)sqrt(x*x+y*y);
             anguloR = arcoTangente(x,y);
+            
+            velocidadRad = velocidadX*cos(anguloR) + velocidadY*sin(anguloR);
+            velocidadTan = -velocidadX*sin(anguloR) + velocidadY*cos(anguloR);
         }
         prenderLed();
     }
