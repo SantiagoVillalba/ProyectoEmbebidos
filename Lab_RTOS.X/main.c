@@ -381,8 +381,8 @@ void vUpdatePosition (TimerHandle_t xTimer){
         if(radio>=0.015){
             acRadial = accel.Accel_X* -0.1*cos( anguloR ) + accel.Accel_Y * -0.1 *sin( anguloR );
             acTan = accel.Accel_Y*-0.1*cos( anguloR ) - accel.Accel_X * -0.1*sin( anguloR );
-            acRadRoz = acRadial - sqrt(pow(velocidadTan,2)+pow(velocidadRad,2))*cos(arcoTangente(velocidadTan,velocidadRad)) * 10;
-            acTanRoz = acTan - sqrt(pow(velocidadTan,2)+pow(velocidadRad,2))*sin(arcoTangente(velocidadTan,velocidadRad)) * 10;
+            acRadRoz = acRadial - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*cos(arcoTangente(velocidadTan,velocidadRad)) * 10;
+            acTanRoz = acTan - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*sin(arcoTangente(velocidadTan,velocidadRad)) * 10;
             
             varVelocidadTan = acTanRoz * 0.001;
             varVelocidadRadial = acRadRoz * 0.001;
@@ -402,8 +402,8 @@ void vUpdatePosition (TimerHandle_t xTimer){
             velocidadY = velocidadTan*cos(anguloR) + velocidadRad*sin(anguloR);
             
         }else{
-            acXRoz = accel.Accel_X - sqrt(pow(velocidadX,2)+pow(velocidadY,2))*cos(arcoTangente(velocidadY,velocidadX)) * 10;
-            acYRoz = accel.Accel_Y - sqrt(pow(velocidadX,2)+pow(velocidadY,2))*sin(arcoTangente(velocidadY,velocidadX)) * 10;
+            acXRoz = accel.Accel_X - sqrt(powf(velocidadX,2)+powf(velocidadY,2))*cos(arcoTangente(velocidadY,velocidadX)) * 10;
+            acYRoz = accel.Accel_Y - sqrt(powf(velocidadX,2)+powf(velocidadY,2))*sin(arcoTangente(velocidadY,velocidadX)) * 10;
             
             varVX = acXRoz * -0.1 * 0.001;
             varVY = acYRoz * -0.1 * 0.001;
