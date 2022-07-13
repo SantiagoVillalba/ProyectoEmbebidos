@@ -172,11 +172,10 @@ void InterfazGeneral( void *p_param ){
         y = radio * sin(anguloR);
 
         prenderLed();
+        xTaskCreate( HighScore, "task2", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &HighScore );
         
         xTaskCreate( IAEnemiga, "task1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+3, &IA );
     
-        xTaskCreate( HighScore, "task2", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &HighScore );
-
         TimerHandle_t TimerPosicion = xTimerCreate ("Update Position",pdMS_TO_TICKS(1UL),pdTRUE, NULL , vUpdatePosition);
         xTimerStart( TimerPosicion, 0 );
         
@@ -280,7 +279,7 @@ void IAEnemiga( void *p_param ){
     }
 }
 
-float arcoTangente(float x, float y){
+float arcoTangente(float y, float x){
     if(x > 0 && y > 0){
         return atan((float)(y/x)) ;
     }else if(x = 0 && y > 0){
