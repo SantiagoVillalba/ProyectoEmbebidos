@@ -115,6 +115,7 @@ void vFinishWaiting (TimerHandle_t xTimer){
 }
 
 void VerBotones( void *p_param ){
+    bool juegoArranco = false;
     bool timerCreado = false;
     TimerHandle_t PasoDeSec;
     while(1){
@@ -136,8 +137,12 @@ void VerBotones( void *p_param ){
             }
             xSemaphoreGive( semFinishWaiting );
         }else if(BTN1_GetValue()&& !BTN2_GetValue()){
-            xSemaphoreGive( semTerminoJuego );
-            xSemaphoreGive( semIniciarJuego );
+            if(!juegoArranco){
+                xSemaphoreGive( semIniciarJuego );
+            }else{
+                xSemaphoreGive( semTerminoJuego );
+                xSemaphoreGive( semIniciarJuego );
+            }
         }
         if(timerCreado && !BTN2_GetValue()){
             timerCreado = false;
