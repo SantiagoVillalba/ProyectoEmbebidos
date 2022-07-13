@@ -60,6 +60,11 @@ void INTERRUPT_Initialize (void)
         IPC7bits.USBIP = 1;
     //    Sub Priority: 0
         IPC7bits.USBIS = 0;
+    //    CNAI: PORT A Change Notification
+    //    Priority: 1
+        IPC2bits.CNAIP = 1;
+    //    Sub Priority: 0
+        IPC2bits.CNAIS = 0;
     //    CNBI: PORT B Change Notification
     //    Priority: 1
         IPC2bits.CNBIP = 1;

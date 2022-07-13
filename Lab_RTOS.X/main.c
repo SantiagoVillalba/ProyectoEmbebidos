@@ -30,6 +30,7 @@ short cuadrantePlayer;
 short cuadranteMaquina;
 int volatile highScoreCounter = 0;
 int volatile historicHighScoreCounter = 0;
+bool finishWaiting = false;
 
 float radio;
 float anguloR;
@@ -47,8 +48,11 @@ SemaphoreHandle_t semIniciarJuego;
 SemaphoreHandle_t semCuadrante ;
 SemaphoreHandle_t semDificultadDelay;
 SemaphoreHandle_t arrancoElEnemigo;
+SemaphoreHandle_t semHighScore;
+SemaphoreHandle_t semFinishWaiting;
 
 void InterfazGeneral( void *p_param );
+void VerBotones( void *p_param );
 void vUpdatePosition (TimerHandle_t xTimer);
 void IAEnemiga( void *p_param );
 void HighScore( void *p_param );
@@ -76,17 +80,23 @@ int main(void)
     xSemaphoreGive( semCuadrante );
     
     arrancoElEnemigo = xSemaphoreCreateBinary();
-    xSemaphoreGive( arrancoElEnemigo );
+    //xSemaphoreGive( arrancoElEnemigo );
     
     semDificultadDelay = xSemaphoreCreateBinary();
     xSemaphoreGive( semDificultadDelay );
+    
+    semHighScore = xSemaphoreCreateBinary();
+    xSemaphoreGive( semHighScore );
+    
+    semFinishWaiting = xSemaphoreCreateBinary();
+    xSemaphoreGive( semFinishWaiting );
     
     semTerminoJuego = xSemaphoreCreateCounting(1,0);
     
     semIniciarJuego= xSemaphoreCreateCounting(1,0);
             
-    xTaskCreate( InterfazGeneral, "task0", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+10, NULL );
-    
+    xTaskCreate( InterfazGeneral, "task0", configMINIMAL_STACK_SIZE+200, NULL, tskIDLE_PRIORITY+10, NULL );
+    xTaskCreate( VerBotones, "task-1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL );
     /* Finally start the scheduler. */
     vTaskStartScheduler( );
 
@@ -98,11 +108,50 @@ int main(void)
     for(;;);
 }
 
+void vFinishWaiting (TimerHandle_t xTimer){
+    xSemaphoreTake( semFinishWaiting, portMAX_DELAY);
+    finishWaiting = true;
+    xSemaphoreGive( semFinishWaiting );
+}
+
+void VerBotones( void *p_param ){
+    bool timerCreado = false;
+    TimerHandle_t PasoDeSec;
+    while(1){
+        if(BTN1_GetValue() && BTN2_GetValue()){
+            if(!timerCreado){
+                timerCreado = true;
+                PasoDeSec = xTimerCreate ("Waiting 3 sec",pdMS_TO_TICKS(3000UL),pdFALSE, NULL , vFinishWaiting);
+                xTimerStart( PasoDeSec, 0 );
+            }
+            xSemaphoreTake( semFinishWaiting, portMAX_DELAY);
+            if(timerCreado && finishWaiting){
+                //proteger valor HighScore
+                xSemaphoreTake( semHighScore, portMAX_DELAY);
+                int volatile highScoreCounter = 0;
+                int volatile historicHighScoreCounter = 0;
+                timerCreado = false;
+                finishWaiting = false;
+                xSemaphoreGive( semHighScore );
+            }
+            xSemaphoreGive( semFinishWaiting );
+        }else if(BTN1_GetValue()&& !BTN2_GetValue()){
+            xSemaphoreGive( semTerminoJuego );
+            xSemaphoreGive( semIniciarJuego );
+        }
+        if(timerCreado && !BTN2_GetValue()){
+            timerCreado = false;
+            xTimerDelete( PasoDeSec , 0 );
+            finishWaiting = false;
+        }
+    }
+}
+
 void InterfazGeneral( void *p_param ){
     TaskHandle_t IA;
     TaskHandle_t HighScore;
     while(1){
-        xSemaphoreTake( semIniciarJuego, portMAX_DELAY)
+        xSemaphoreTake( semIniciarJuego, portMAX_DELAY);
         //radio = rand() % 0.05;
         //while(radio<110){
             //radio = rand() % 0.05;
@@ -130,9 +179,12 @@ void InterfazGeneral( void *p_param ){
         vTaskDelete( IA );
         vTaskDelete( HighScore );
         xTimerDelete( TimerPosicion , 0 );
+        
+        xSemaphoreTake( semHighScore, portMAX_DELAY);
         if(highScoreCounter > historicHighScoreCounter){
             historicHighScoreCounter = highScoreCounter;
         }
+        xSemaphoreGive( semHighScore );
         
     }
 }
@@ -141,11 +193,11 @@ void HighScore( void *p_param ){
     // Se espera a que arranque a correr el enemigo.
     xSemaphoreTake( arrancoElEnemigo, portMAX_DELAY);
     
-    while(1){
-        //xSemaphoreTake( semTerminoJuego, portMAX_DELAY);
-        
+    while(1){      
         vTaskDelay(pdMS_TO_TICKS(1000UL));
+        xSemaphoreTake( semHighScore, portMAX_DELAY);
         highScoreCounter++;
+        xSemaphoreGive( semHighScore);
         counterDif++;  
         if(counterDif == 10 ){
             xSemaphoreTake( semDificultadDelay, portMAX_DELAY);

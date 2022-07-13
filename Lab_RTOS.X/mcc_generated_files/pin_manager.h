@@ -51,6 +51,9 @@
 */
 #include <xc.h>
 #include <stdbool.h>
+/**
+    Section: Device Pin Macros
+*/
 
 /**
   @Summary
@@ -279,6 +282,36 @@ inline static void ACC_SCK_SetValue(bool value) {
  */
 #define ACC_MOSI_SetLow()           ( LATDCLR = (1 << 0) )
 
+/**
+  @Summary
+    Sets a value to the GPIO pin.
+
+  @Description
+    Sets or Resets the GPIO pin, RD0, low or high using LATD0.
+
+  @Preconditions
+    The RD0 must be set to an output.
+
+  @Returns
+    None.
+
+  @Param
+    bool value; : value to be set to the GPIO pin.
+
+  @Example
+    <code>
+    // Set RD0 to low.
+    ACC_MOSI_SetValue(false);
+    </code>
+
+ */
+inline static void ACC_MOSI_SetValue(bool value) {
+    if (value) {
+        ACC_MOSI_SetHigh();
+    } else {
+        ACC_MOSI_SetLow();
+    }
+}
 
 /**
   @Summary
@@ -734,10 +767,6 @@ inline static void ACC_MISO_SetValue(bool value) {
 
  */
 #define ACC_MISO_SetDigitalOutput()   ( TRISDCLR = (1 << 4) )
-
-/**
-    Section: Device Pin Macros
-*/
 /**
   @Summary
     Sets the GPIO pin, RA10, high using LATA10.
@@ -2243,40 +2272,7 @@ inline static void channel_POT_SetValue(bool value)
 */
 #define ACC_MOSI_SetLow()           ( LATDCLR = (1 << 0) )
 
-/**
-  @Summary
-    Sets a value to the GPIO pin.
 
-  @Description
-    Sets or Resets the GPIO pin, RD0, low or high using LATD0.
-
-  @Preconditions
-    The RD0 must be set to an output.
-
-  @Returns
-    None.
-
-  @Param
-    bool value; : value to be set to the GPIO pin.
-
-  @Example
-    <code>
-    // Set RD0 to low.
-    ACC_MOSI_SetValue(false);
-    </code>
-
-*/
-inline static void ACC_MOSI_SetValue(bool value)
-{
-  if(value)
-  {
-    ACC_MOSI_SetHigh();
-  }
-  else
-  {
-    ACC_MOSI_SetLow();
-  }
-}
 
 /**
   @Summary
@@ -2426,6 +2422,7 @@ inline static void ACC_MOSI_SetValue(bool value)
 #define ACC_MISO_SetLow()           ( LATDCLR = (1 << 4) )
 
 
+
 /**
   @Summary
     Toggles the GPIO pin, RD4, using LATD4.
@@ -2561,6 +2558,27 @@ void PIN_MANAGER_Initialize (void);
 
 /**
   @Summary
+    Callback for BTN2 Pin.
+
+  @Description
+    This routine is callback for BTN2 Pin
+
+  @Param
+    None.
+
+  @Returns
+    None
+ 
+ 
+  @Example 
+    <code>
+        BTN2_SetInterruptHandler(&BTN2_CallBack);
+    </code>
+*/
+void BTN2_CallBack(void);
+
+/**
+  @Summary
     Callback for ACC_INT1 Pin.
 
   @Description
@@ -2580,6 +2598,67 @@ void PIN_MANAGER_Initialize (void);
 */
 void ACC_INT1_CallBack(void);
 
+/**
+  @Summary
+    Callback for BTN1 Pin.
+
+  @Description
+    This routine is callback for BTN1 Pin
+
+  @Param
+    None.
+
+  @Returns
+    None
+ 
+ 
+  @Example 
+    <code>
+        BTN1_SetInterruptHandler(&BTN1_CallBack);
+    </code>
+*/
+void BTN1_CallBack(void);
+
+
+/**
+  @Summary
+    Assigns a function pointer with a callback address.
+
+  @Description
+    This routine assigns a function pointer with a callback address.
+
+  @Param
+    Address of the callback routine.
+
+  @Returns
+    None
+ 
+  @Example 
+    <code>
+        BTN2_SetInterruptHandler(&BTN2_CallBack);
+    </code>
+*/
+void BTN2_SetInterruptHandler(void (* InterruptHandler)(void));
+
+/**
+  @Summary
+    Assigns a function pointer with a callback address.
+
+  @Description
+    This routine assigns a function pointer with a callback address.
+
+  @Param
+    Address of the callback routine.
+
+  @Returns
+    None
+ 
+  @Example 
+    <code>
+        BTN2_SetIOCInterruptHandler(&BTN2_CallBack);
+    </code>
+*/
+void __attribute__((deprecated("\nThis will be removed in future MCC releases. \nUse BTN2_SetInterruptHandler instead."))) BTN2_SetIOCInterruptHandler(void *handler);
 
 /**
   @Summary
@@ -2620,6 +2699,46 @@ void ACC_INT1_SetInterruptHandler(void (* InterruptHandler)(void));
     </code>
 */
 void __attribute__((deprecated("\nThis will be removed in future MCC releases. \nUse ACC_INT1_SetInterruptHandler instead."))) ACC_INT1_SetIOCInterruptHandler(void *handler);
+
+/**
+  @Summary
+    Assigns a function pointer with a callback address.
+
+  @Description
+    This routine assigns a function pointer with a callback address.
+
+  @Param
+    Address of the callback routine.
+
+  @Returns
+    None
+ 
+  @Example 
+    <code>
+        BTN1_SetInterruptHandler(&BTN1_CallBack);
+    </code>
+*/
+void BTN1_SetInterruptHandler(void (* InterruptHandler)(void));
+
+/**
+  @Summary
+    Assigns a function pointer with a callback address.
+
+  @Description
+    This routine assigns a function pointer with a callback address.
+
+  @Param
+    Address of the callback routine.
+
+  @Returns
+    None
+ 
+  @Example 
+    <code>
+        BTN1_SetIOCInterruptHandler(&BTN1_CallBack);
+    </code>
+*/
+void __attribute__((deprecated("\nThis will be removed in future MCC releases. \nUse BTN1_SetInterruptHandler instead."))) BTN1_SetIOCInterruptHandler(void *handler);
 
 
 #endif
