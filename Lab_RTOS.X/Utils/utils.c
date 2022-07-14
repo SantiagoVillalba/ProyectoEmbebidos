@@ -1,12 +1,12 @@
 #include "utils.h"
 
 
-
 void settingRGB(uint8_t led, colors color){
     static ws2812_t leds[8];
     // restamos uno para que vaya del 1 al 8 los leds
     led --;
-    switch(color){
+    if(led >= 0 && led < 8){
+        switch(color){
         case Red:
             leds[led] = RED;
             break;
@@ -22,8 +22,44 @@ void settingRGB(uint8_t led, colors color){
         case Black:
             leds[led] = (ws2812_t){0, 0, 0};
             break;
+        }
+        WS2812_send( leds , 8);
     }
-    WS2812_send( leds , 8);
+    
+}
+
+colors colorBase4(int color){
+    colors new;
+    switch(color){
+        case 0:
+            new = White;
+            break;
+        case 1:
+            new = Red;
+            break;
+        case 2:
+            new = Blue;
+            break;
+        case 3:
+            new = Green;
+            break;
+    }
+    return new;
+}
+
+int cambiarBase4(int puntaje){
+    int b;
+    int numero;
+    int contador = 0;
+ 
+    while(puntaje!=0)
+    {
+        b = puntaje%4;
+        puntaje = puntaje/4;
+        numero += b* pow(10,contador);
+        contador++;
+    }
+    return numero;
 }
 
 void apagarLeds(){

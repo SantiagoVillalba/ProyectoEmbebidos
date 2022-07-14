@@ -767,6 +767,7 @@ inline static void ACC_MISO_SetValue(bool value) {
 
  */
 #define ACC_MISO_SetDigitalOutput()   ( TRISDCLR = (1 << 4) )
+
 /**
   @Summary
     Sets the GPIO pin, RA10, high using LATA10.
@@ -949,6 +950,188 @@ inline static void LED_CTRL_SetValue(bool value)
 
 */
 #define LED_CTRL_SetDigitalOutput()   ( TRISACLR = (1 << 10) )
+/**
+  @Summary
+    Sets the GPIO pin, RA12, high using LATA12.
+
+  @Description
+    Sets the GPIO pin, RA12, high using LATA12.
+
+  @Preconditions
+    The RA12 must be set to an output.
+
+  @Returns
+    None.
+
+  @Param
+    None.
+
+  @Example
+    <code>
+    // Set RA12 high (1)
+    BUZZER_SetHigh();
+    </code>
+
+*/
+#define BUZZER_SetHigh()          ( LATASET = (1 << 12) )
+/**
+  @Summary
+    Sets the GPIO pin, RA12, low using LATA12.
+
+  @Description
+    Sets the GPIO pin, RA12, low using LATA12.
+
+  @Preconditions
+    The RA12 must be set to an output.
+
+  @Returns
+    None.
+
+  @Param
+    None.
+
+  @Example
+    <code>
+    // Set RA12 low (0)
+    BUZZER_SetLow();
+    </code>
+
+*/
+#define BUZZER_SetLow()           ( LATACLR = (1 << 12) )
+
+/**
+  @Summary
+    Sets a value to the GPIO pin.
+
+  @Description
+    Sets or Resets the GPIO pin, RA12, low or high using LATA12.
+
+  @Preconditions
+    The RA12 must be set to an output.
+
+  @Returns
+    None.
+
+  @Param
+    bool value; : value to be set to the GPIO pin.
+
+  @Example
+    <code>
+    // Set RA12 to low.
+    BUZZER_SetValue(false);
+    </code>
+
+*/
+inline static void BUZZER_SetValue(bool value)
+{
+  if(value)
+  {
+    BUZZER_SetHigh();
+  }
+  else
+  {
+    BUZZER_SetLow();
+  }
+}
+
+/**
+  @Summary
+    Toggles the GPIO pin, RA12, using LATA12.
+
+  @Description
+    Toggles the GPIO pin, RA12, using LATA12.
+
+  @Preconditions
+    The RA12 must be set to an output.
+
+  @Returns
+    None.
+
+  @Param
+    None.
+
+  @Example
+    <code>
+    // Toggle RA12
+    BUZZER_Toggle();
+    </code>
+
+*/
+#define BUZZER_Toggle()           ( LATAINV = (1 << 12) )
+/**
+  @Summary
+    Reads the value of the GPIO pin, RA12.
+
+  @Description
+    Reads the value of the GPIO pin, RA12.
+
+  @Preconditions
+    None.
+
+  @Returns
+    None.
+
+  @Param
+    None.
+
+  @Example
+    <code>
+    uint16_t portValue;
+
+    // Read RA12
+    postValue = BUZZER_GetValue();
+    </code>
+
+*/
+#define BUZZER_GetValue()         PORTAbits.RA12
+/**
+  @Summary
+    Configures the GPIO pin, RA12, as an input.
+
+  @Description
+    Configures the GPIO pin, RA12, as an input.
+
+  @Preconditions
+    None.
+
+  @Returns
+    None.
+
+  @Param
+    None.
+
+  @Example
+    <code>
+    // Sets the RA12 as an input
+    BUZZER_SetDigitalInput();
+    </code>
+
+*/
+#define BUZZER_SetDigitalInput()   ( TRISASET = (1 << 12) )
+/**
+  @Summary
+    Configures the GPIO pin, RA12, as an output.
+
+  @Description
+    Configures the GPIO pin, RA12, as an output.
+
+  @Preconditions
+    None.
+
+  @Returns
+    None.
+
+  @Param
+    None.
+
+  @Example
+    <code>
+    // Sets the RA12 as an output
+    BUZZER_SetDigitalOutput();
+    </code>
+
+*/
+#define BUZZER_SetDigitalOutput()   ( TRISACLR = (1 << 12) )
 /**
   @Summary
     Sets the GPIO pin, RA13, high using LATA13.
@@ -2273,7 +2456,6 @@ inline static void channel_POT_SetValue(bool value)
 #define ACC_MOSI_SetLow()           ( LATDCLR = (1 << 0) )
 
 
-
 /**
   @Summary
     Toggles the GPIO pin, RD0, using LATD0.
@@ -2420,7 +2602,6 @@ inline static void channel_POT_SetValue(bool value)
 
 */
 #define ACC_MISO_SetLow()           ( LATDCLR = (1 << 4) )
-
 
 
 /**

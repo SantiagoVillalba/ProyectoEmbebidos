@@ -144,6 +144,32 @@ int main(void)
 }
 void vFinishWaiting (TimerHandle_t xTimer);
 
+void PrenderBuzzer(int x){
+    for(int i = 0; i <= x;i++){
+        BUZZER_SetHigh();
+        vTaskDelay(pdMS_TO_TICKS(1));
+        BUZZER_SetLow();
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+}
+
+void mostrarHighScore(int puntajeBase4){
+    /*
+     * 0 es blanco
+     * 1 es rojo
+     * 2 es azul
+     * 3 es verde
+     */
+    int digito = 8;
+    while(digito >= 5)
+    {
+        vTaskDelay(pdMS_TO_TICKS(1));
+        settingRGB( digito , colorBase4(puntajeBase4 % 10));
+        digito--;
+        puntajeBase4 /= 10;
+    }
+}
+
 void BotonS2(){
     int static contadorS2 = 0;
     contadorS2++;
@@ -197,20 +223,46 @@ void vFinishWaiting (TimerHandle_t xTimer){
 
 
 void InterfazGeneral( void *p_param ){
+    int puntajeBase4;
     while(1){
         xSemaphoreTake( semIniciarJuego, portMAX_DELAY);
-
+        PrenderBuzzer(500);
+        apagarLeds();
+        highScoreCounter = 0;
+        cuadranteMaquina = 0;
+        velocidadX = 0;
+        velocidadY = 0;
+        velocidadTan = 0;
+        velocidadRad = 0;
+        // cambiar posicion bolita random
+        
         jugando = true;
         xSemaphoreGive(semArrancarIA);
         xSemaphoreGive(semArrancarHighScore);
         
         xSemaphoreTake( semTerminoJuego, portMAX_DELAY);
         jugando = false;
+        cuadranteMaquina = 0;
         apagarLeds();
         
         xSemaphoreTake( semHighScore, portMAX_DELAY);
+        puntajeBase4 = cambiarBase4(highScoreCounter);
+        mostrarHighScore(puntajeBase4);
         if(highScoreCounter > historicHighScoreCounter){
             historicHighScoreCounter = highScoreCounter;
+            PrenderBuzzer(50);
+            vTaskDelay(pdMS_TO_TICKS(100));
+            PrenderBuzzer(50);
+            vTaskDelay(pdMS_TO_TICKS(100));
+            PrenderBuzzer(50);
+            vTaskDelay(pdMS_TO_TICKS(100));
+            PrenderBuzzer(50);
+            vTaskDelay(pdMS_TO_TICKS(100));
+            PrenderBuzzer(50);
+        }else{
+            PrenderBuzzer(200);
+            vTaskDelay(pdMS_TO_TICKS(100));
+            PrenderBuzzer(200);
         }
         xSemaphoreGive( semHighScore );
     }
@@ -219,6 +271,9 @@ void InterfazGeneral( void *p_param ){
 void HighScore( void *p_param ){
     while(1){
         xSemaphoreTake(semArrancarHighScore, portMAX_DELAY);
+        xSemaphoreTake( semDificultadDelay, portMAX_DELAY);
+        dificultadDelayMS = 3000;
+        xSemaphoreGive( semDificultadDelay );
         // Se espera a que arranque a correr el enemigo.
         xSemaphoreTake( arrancoElEnemigo, portMAX_DELAY);
         while(jugando){      
@@ -242,46 +297,53 @@ void HighScore( void *p_param ){
 void IAEnemiga( void *p_param ){
     while(1){
         xSemaphoreTake(semArrancarIA, portMAX_DELAY);
-        vTaskDelay(pdMS_TO_TICKS(1000UL));
-        xSemaphoreTake( semCuadrante, portMAX_DELAY);
-        switch(cuadrantePlayer){
-            case 1:
-                cuadranteMaquina = 5;
-                break;
-            case 2:
-                cuadranteMaquina = 6;
-                break;
-            case 3:
-                cuadranteMaquina = 7;
-                break;
-            case 4:
-                cuadranteMaquina = 8;
-                break;
-            case 5:
-                cuadranteMaquina = 1;
-                break;
-            case 6:
-                cuadranteMaquina = 2;
-                break;
-            case 7:
-                cuadranteMaquina = 3;
-                break;
-            case 8:
-                cuadranteMaquina = 4;
-                break;
+        if(jugando){
+            vTaskDelay(pdMS_TO_TICKS(1000UL));
+            xSemaphoreTake( semCuadrante, portMAX_DELAY);
+            switch(cuadrantePlayer){
+                case 1:
+                    cuadranteMaquina = 5;
+                    break;
+                case 2:
+                    cuadranteMaquina = 6;
+                    break;
+                case 3:
+                    cuadranteMaquina = 7;
+                    break;
+                case 4:
+                    cuadranteMaquina = 8;
+                    break;
+                case 5:
+                    cuadranteMaquina = 1;
+                    break;
+                case 6:
+                    cuadranteMaquina = 2;
+                    break;
+                case 7:
+                    cuadranteMaquina = 3;
+                    break;
+                case 8:
+                    cuadranteMaquina = 4;
+                    break;
+            }
+            settingRGB(cuadranteMaquina,Red);
+            xSemaphoreGive( semCuadrante );
+            xSemaphoreGive( arrancoElEnemigo );
         }
-        settingRGB(cuadranteMaquina,Red);
-        xSemaphoreGive( semCuadrante );
-        xSemaphoreGive( arrancoElEnemigo );
         while(jugando){
             xSemaphoreTake( semDificultadDelay, portMAX_DELAY);
             vTaskDelay(pdMS_TO_TICKS(dificultadDelayMS));
             xSemaphoreGive( semDificultadDelay );
             // logica del enemigo
+            if(!jugando){
+                break;
+            }
             xSemaphoreTake( semCuadrante, portMAX_DELAY);
             if(cuadranteMaquina == cuadrantePlayer){
                 // se termino el juego perdiste;
-                xSemaphoreGive( semTerminoJuego );
+                if(jugando){
+                    xSemaphoreGive( semTerminoJuego );
+                }
             }else{
                 int contadorRecorroNormal = 0;
                 int punteroNormal = cuadranteMaquina;
@@ -403,7 +465,9 @@ void prenderLed(){
     }
     if(cuadrantePlayer == cuadranteMaquina){
         // perder
-        xSemaphoreGive( semTerminoJuego );
+        if(jugando){
+            xSemaphoreGive( semTerminoJuego );
+        }
     }else{
         settingRGB(cuadrantePlayer,White);
     }
@@ -446,6 +510,13 @@ void vUpdatePosition (TimerHandle_t xTimer){
                     radio = 0.05;
                     velocidadRad = 0;
                 }
+                
+                if(anguloR >= (float)M_PI*2){
+                    anguloR -= (float)2*M_PI;
+                }else if(anguloR < 0){
+                    anguloR += (float)2*M_PI;
+                }
+                
                 x = radio * cos(anguloR);
                 y = radio * sin(anguloR);
                 velocidadX = velocidadRad*cos(anguloR) - velocidadTan*sin(anguloR);
