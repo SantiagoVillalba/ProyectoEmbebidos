@@ -26,4 +26,15 @@ void settingRGB(uint8_t led, colors color){
     WS2812_send( leds , 8);
 }
 
+void apagarLeds(){
+    settingRGB(1,Black);
+    settingRGB(2,Black);
+    settingRGB(3,Black);
+    settingRGB(4,Black);
+    settingRGB(5,Black);
+    settingRGB(6,Black);
+    settingRGB(7,Black);
+    settingRGB(8,Black);
+}
+
 

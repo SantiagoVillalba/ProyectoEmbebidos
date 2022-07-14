@@ -6,6 +6,8 @@
 
 typedef enum{Red, Green, Blue, White, Black}colors;
 
+void apagarLeds();
+
 typedef struct {
     uint8_t led;
     colors color;

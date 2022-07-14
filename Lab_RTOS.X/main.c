@@ -30,7 +30,7 @@ short cuadrantePlayer;
 short cuadranteMaquina;
 int volatile highScoreCounter = 0;
 int volatile historicHighScoreCounter = 0;
-bool finishWaiting = false;
+bool jugando = false;
 
 float radio;
 float anguloR;
@@ -49,14 +49,25 @@ SemaphoreHandle_t semCuadrante ;
 SemaphoreHandle_t semDificultadDelay;
 SemaphoreHandle_t arrancoElEnemigo;
 SemaphoreHandle_t semHighScore;
-SemaphoreHandle_t semFinishWaiting;
+SemaphoreHandle_t semArrancarIA;
+SemaphoreHandle_t semArrancarHighScore;
 
 void InterfazGeneral( void *p_param );
-void VerBotones( void *p_param );
 void vUpdatePosition (TimerHandle_t xTimer);
 void IAEnemiga( void *p_param );
 void HighScore( void *p_param );
 void prenderLed();
+
+void BotonS2();
+void BotonS3();
+SemaphoreHandle_t protejoBotones;
+bool apretoS2 = false;
+bool apretoS3 = false;
+TimerHandle_t PasoDeSec;
+bool inicioTimer = false;
+TimerHandle_t PasoDeSec;
+
+
 /*
                          Main application
  */
@@ -65,22 +76,17 @@ int main(void)
     // initialize the device
     SYSTEM_Initialize( );
     
-    settingRGB(1,Black);
-    settingRGB(2,Black);
-    settingRGB(3,Black);
-    settingRGB(4,Black);
-    settingRGB(5,Black);
-    settingRGB(6,Black);
-    settingRGB(7,Black);
-    settingRGB(8,Black);
+    BTN1_SetInterruptHandler(&BotonS2);
+    BTN2_SetInterruptHandler(&BotonS3);
+    
+    apagarLeds();
     
     while(!ACCEL_init());
     
     semCuadrante = xSemaphoreCreateBinary();
     xSemaphoreGive( semCuadrante );
     
-    arrancoElEnemigo = xSemaphoreCreateBinary();
-    //xSemaphoreGive( arrancoElEnemigo );
+    arrancoElEnemigo = xSemaphoreCreateCounting(1,0);
     
     semDificultadDelay = xSemaphoreCreateBinary();
     xSemaphoreGive( semDificultadDelay );
@@ -88,15 +94,44 @@ int main(void)
     semHighScore = xSemaphoreCreateBinary();
     xSemaphoreGive( semHighScore );
     
-    semFinishWaiting = xSemaphoreCreateBinary();
-    xSemaphoreGive( semFinishWaiting );
-    
+    protejoBotones = xSemaphoreCreateBinary();
+    xSemaphoreGive( protejoBotones );
+            
     semTerminoJuego = xSemaphoreCreateCounting(1,0);
     
-    semIniciarJuego= xSemaphoreCreateCounting(1,0);
+    semIniciarJuego = xSemaphoreCreateCounting(1,0);
+    
+    semArrancarHighScore = xSemaphoreCreateCounting(1,0);
+    
+    semArrancarIA = xSemaphoreCreateCounting(1,0);
             
     xTaskCreate( InterfazGeneral, "task0", configMINIMAL_STACK_SIZE+200, NULL, tskIDLE_PRIORITY+10, NULL );
-    xTaskCreate( VerBotones, "task-1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL );
+    
+    
+    //radio = rand() % 0.05;
+    //while(radio<110){
+        //radio = rand() % 0.05;
+    //}
+    //anguloR = rand() * ((float)M_PI*2) / RAND_MAX  ;
+
+    // esta hardcoded
+    radio = 0.03;
+    anguloR = (float)3*M_PI/4;
+
+    // Convertir esto en cartesiana.
+    x = radio * cos(anguloR);
+    y = radio * sin(anguloR);
+
+    //prenderLed();
+    
+    xTaskCreate( HighScore, "task2", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+3, NULL );
+
+    xTaskCreate( IAEnemiga, "task1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL );
+
+    TimerHandle_t TimerPosicion = xTimerCreate ("Update Position",pdMS_TO_TICKS(1UL),pdTRUE, NULL , vUpdatePosition);
+    xTimerStart( TimerPosicion, 0 );
+    
+    
     /* Finally start the scheduler. */
     vTaskStartScheduler( );
 
@@ -107,175 +142,188 @@ int main(void)
     for more details. */
     for(;;);
 }
+void vFinishWaiting (TimerHandle_t xTimer);
 
-void vFinishWaiting (TimerHandle_t xTimer){
-    xSemaphoreTake( semFinishWaiting, portMAX_DELAY);
-    finishWaiting = true;
-    xSemaphoreGive( semFinishWaiting );
-}
+void BotonS2(){
+    int static contadorS2 = 0;
+    contadorS2++;
 
-void VerBotones( void *p_param ){
-    bool juegoArranco = false;
-    bool timerCreado = false;
-    TimerHandle_t PasoDeSec;
-    while(1){
-        if(BTN1_GetValue() && BTN2_GetValue()){
-            if(!timerCreado){
-                timerCreado = true;
-                PasoDeSec = xTimerCreate ("Waiting 3 sec",pdMS_TO_TICKS(3000UL),pdFALSE, NULL , vFinishWaiting);
-                xTimerStart( PasoDeSec, 0 );
-            }
-            xSemaphoreTake( semFinishWaiting, portMAX_DELAY);
-            if(timerCreado && finishWaiting){
-                //proteger valor HighScore
-                xSemaphoreTake( semHighScore, portMAX_DELAY);
-                int volatile highScoreCounter = 0;
-                int volatile historicHighScoreCounter = 0;
-                timerCreado = false;
-                finishWaiting = false;
-                xSemaphoreGive( semHighScore );
-            }
-            xSemaphoreGive( semFinishWaiting );
-        }else if(BTN1_GetValue()&& !BTN2_GetValue()){
-            if(!juegoArranco){
-                xSemaphoreGive( semIniciarJuego );
-            }else{
-                xSemaphoreGive( semTerminoJuego );
-                xSemaphoreGive( semIniciarJuego );
-            }
+    xSemaphoreTakeFromISR( protejoBotones ,NULL);
+    apretoS2 = !apretoS2;
+    if(!apretoS2 && contadorS2 == 2 && !apretoS3){
+        if(jugando){
+            xSemaphoreGiveFromISR( semTerminoJuego ,NULL);
+            xSemaphoreGiveFromISR( semIniciarJuego ,NULL);
+        }else{
+            xSemaphoreGiveFromISR( semIniciarJuego ,NULL);
         }
-        if(timerCreado && !BTN2_GetValue()){
-            timerCreado = false;
-            xTimerDelete( PasoDeSec , 0 );
-            finishWaiting = false;
-        }
+        contadorS2 = 0;
+    }
+    xSemaphoreGiveFromISR( protejoBotones ,NULL);
+
+    xSemaphoreTakeFromISR( protejoBotones ,NULL);
+    if(inicioTimer && !apretoS2){
+        xTimerDelete(PasoDeSec,0);
+        inicioTimer = false;
+    }
+    xSemaphoreGiveFromISR( protejoBotones ,NULL);
+    if(contadorS2 >= 2){
+        contadorS2 = 0;
     }
 }
+void BotonS3(){
+    xSemaphoreTakeFromISR( protejoBotones ,NULL);
+    apretoS3 = !apretoS3;
+    if(apretoS2 && apretoS3 && !inicioTimer){
+        inicioTimer = true;
+        PasoDeSec = xTimerCreate ("Waiting 3 sec",pdMS_TO_TICKS(3000UL),pdFALSE, NULL , vFinishWaiting);
+    }
+    xSemaphoreGiveFromISR( protejoBotones ,NULL);
+
+    xSemaphoreTakeFromISR( protejoBotones ,NULL);
+    if(inicioTimer && !apretoS3){
+        xTimerDelete(PasoDeSec,0);
+        inicioTimer = false;
+    }
+    xSemaphoreGiveFromISR( protejoBotones ,NULL);
+}
+
+void vFinishWaiting (TimerHandle_t xTimer){
+    xSemaphoreTake( semHighScore, portMAX_DELAY);
+    highScoreCounter = 0;
+    historicHighScoreCounter = 0;
+    xSemaphoreGive( semHighScore );
+}
+
 
 void InterfazGeneral( void *p_param ){
-    TaskHandle_t IA;
-    TaskHandle_t HighScore;
     while(1){
         xSemaphoreTake( semIniciarJuego, portMAX_DELAY);
-        //radio = rand() % 0.05;
-        //while(radio<110){
-            //radio = rand() % 0.05;
-        //}
-        //anguloR = rand() * ((float)M_PI*2) / RAND_MAX  ;
-        
-        // esta hardcoded
-        radio = 0.03;
-        anguloR = (float)3*M_PI/4;
-        
-        // Convertir esto en cartesiana.
-        x = radio * cos(anguloR);
-        y = radio * sin(anguloR);
 
-        prenderLed();
-        xTaskCreate( HighScore, "task2", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, &HighScore );
-        
-        xTaskCreate( IAEnemiga, "task1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+3, &IA );
-    
-        TimerHandle_t TimerPosicion = xTimerCreate ("Update Position",pdMS_TO_TICKS(1UL),pdTRUE, NULL , vUpdatePosition);
-        xTimerStart( TimerPosicion, 0 );
+        jugando = true;
+        xSemaphoreGive(semArrancarIA);
+        xSemaphoreGive(semArrancarHighScore);
         
         xSemaphoreTake( semTerminoJuego, portMAX_DELAY);
-        vTaskDelete( IA );
-        vTaskDelete( HighScore );
-        xTimerDelete( TimerPosicion , 0 );
+        jugando = false;
+        apagarLeds();
         
         xSemaphoreTake( semHighScore, portMAX_DELAY);
         if(highScoreCounter > historicHighScoreCounter){
             historicHighScoreCounter = highScoreCounter;
         }
         xSemaphoreGive( semHighScore );
-        
     }
 }
 
 void HighScore( void *p_param ){
-    // Se espera a que arranque a correr el enemigo.
-    xSemaphoreTake( arrancoElEnemigo, portMAX_DELAY);
-    
-    while(1){      
-        vTaskDelay(pdMS_TO_TICKS(1000UL));
-        xSemaphoreTake( semHighScore, portMAX_DELAY);
-        highScoreCounter++;
-        xSemaphoreGive( semHighScore);
-        counterDif++;  
-        if(counterDif == 10 ){
-            xSemaphoreTake( semDificultadDelay, portMAX_DELAY);
-            if(dificultadDelayMS > 400){
-                dificultadDelayMS -= 400;
-                counterDif = 1;
+    while(1){
+        xSemaphoreTake(semArrancarHighScore, portMAX_DELAY);
+        // Se espera a que arranque a correr el enemigo.
+        xSemaphoreTake( arrancoElEnemigo, portMAX_DELAY);
+        while(jugando){      
+            vTaskDelay(pdMS_TO_TICKS(1000UL));
+            xSemaphoreTake( semHighScore, portMAX_DELAY);
+            highScoreCounter++;
+            xSemaphoreGive( semHighScore);
+            counterDif++;  
+            if(counterDif == 10 ){
+                xSemaphoreTake( semDificultadDelay, portMAX_DELAY);
+                if(dificultadDelayMS > 400){
+                    dificultadDelayMS -= 400;
+                    counterDif = 1;
+                }
+                xSemaphoreGive( semDificultadDelay );
             }
-            xSemaphoreGive( semDificultadDelay );
         }
     }
-    
 }
 
 void IAEnemiga( void *p_param ){
-    vTaskDelay(pdMS_TO_TICKS(1000UL));
-    cuadranteMaquina = (rand() % 8) + 1;
-    xSemaphoreTake( semCuadrante, portMAX_DELAY);
-    while(cuadranteMaquina == cuadrantePlayer){
-        cuadranteMaquina = (rand() % 8) + 1;
-    }
-    xSemaphoreGive( semCuadrante );
-    xSemaphoreGive( arrancoElEnemigo );
     while(1){
-        int delaydif;
-        xSemaphoreTake( semDificultadDelay, portMAX_DELAY);
-        delaydif = dificultadDelayMS;
-        xSemaphoreGive( semDificultadDelay );
-        vTaskDelay(pdMS_TO_TICKS(delaydif));
-        // logica del enemigo
+        xSemaphoreTake(semArrancarIA, portMAX_DELAY);
+        vTaskDelay(pdMS_TO_TICKS(1000UL));
         xSemaphoreTake( semCuadrante, portMAX_DELAY);
-        if(cuadranteMaquina == cuadrantePlayer){
-            // se termino el juego perdiste;
-            xSemaphoreGive( semTerminoJuego );
-        }else{
-            int contadorRecorroNormal = 0;
-            int punteroNormal = cuadranteMaquina;
-            bool encuentroNormal = false;
-            
-            int contadorRecorroDerAIzq = 0;
-            int punteroDerAIzq = cuadranteMaquina;
-            bool encuentroDerAIzq = false;
-            while(!encuentroNormal || !encuentroDerAIzq){
-                if(punteroNormal != cuadrantePlayer){
-                    punteroNormal = (punteroNormal % 8) + 1;
-                    contadorRecorroNormal++;
-                }else{
-                    encuentroNormal = true;
-                }
-                
-                if(punteroDerAIzq != cuadrantePlayer){
-                    if(punteroDerAIzq > 1){
-                        punteroDerAIzq = punteroDerAIzq - 1;
-                    }else{
-                        punteroDerAIzq = 8;
-                    }
-                    contadorRecorroDerAIzq++;
-                }else{
-                    encuentroDerAIzq = true;
-                }
-            }
-            settingRGB(cuadranteMaquina,Black);
-            
-            if(contadorRecorroNormal <= contadorRecorroDerAIzq){
-                cuadranteMaquina = (cuadranteMaquina % 8) + 1;
-            }else{
-                if(cuadranteMaquina > 1){
-                    cuadranteMaquina = (cuadranteMaquina - 1);
-                }else{
-                    cuadranteMaquina = 8;
-                }
-            }
+        switch(cuadrantePlayer){
+            case 1:
+                cuadranteMaquina = 5;
+                break;
+            case 2:
+                cuadranteMaquina = 6;
+                break;
+            case 3:
+                cuadranteMaquina = 7;
+                break;
+            case 4:
+                cuadranteMaquina = 8;
+                break;
+            case 5:
+                cuadranteMaquina = 1;
+                break;
+            case 6:
+                cuadranteMaquina = 2;
+                break;
+            case 7:
+                cuadranteMaquina = 3;
+                break;
+            case 8:
+                cuadranteMaquina = 4;
+                break;
         }
         settingRGB(cuadranteMaquina,Red);
         xSemaphoreGive( semCuadrante );
+        xSemaphoreGive( arrancoElEnemigo );
+        while(jugando){
+            xSemaphoreTake( semDificultadDelay, portMAX_DELAY);
+            vTaskDelay(pdMS_TO_TICKS(dificultadDelayMS));
+            xSemaphoreGive( semDificultadDelay );
+            // logica del enemigo
+            xSemaphoreTake( semCuadrante, portMAX_DELAY);
+            if(cuadranteMaquina == cuadrantePlayer){
+                // se termino el juego perdiste;
+                xSemaphoreGive( semTerminoJuego );
+            }else{
+                int contadorRecorroNormal = 0;
+                int punteroNormal = cuadranteMaquina;
+                bool encuentroNormal = false;
+
+                int contadorRecorroDerAIzq = 0;
+                int punteroDerAIzq = cuadranteMaquina;
+                bool encuentroDerAIzq = false;
+                while(!encuentroNormal || !encuentroDerAIzq){
+                    if(punteroNormal != cuadrantePlayer){
+                        punteroNormal = (punteroNormal % 8) + 1;
+                        contadorRecorroNormal++;
+                    }else{
+                        encuentroNormal = true;
+                    }
+
+                    if(punteroDerAIzq != cuadrantePlayer){
+                        if(punteroDerAIzq > 1){
+                            punteroDerAIzq = punteroDerAIzq - 1;
+                        }else{
+                            punteroDerAIzq = 8;
+                        }
+                        contadorRecorroDerAIzq++;
+                    }else{
+                        encuentroDerAIzq = true;
+                    }
+                }
+                settingRGB(cuadranteMaquina,Black);
+
+                if(contadorRecorroNormal <= contadorRecorroDerAIzq){
+                    cuadranteMaquina = (cuadranteMaquina % 8) + 1;
+                }else{
+                    if(cuadranteMaquina > 1){
+                        cuadranteMaquina = (cuadranteMaquina - 1);
+                    }else{
+                        cuadranteMaquina = 8;
+                    }
+                }
+                settingRGB(cuadranteMaquina,Red);
+            }
+            xSemaphoreGive( semCuadrante );
+        }
     }
 }
 
@@ -363,65 +411,68 @@ void prenderLed(){
 }
 
 void vUpdatePosition (TimerHandle_t xTimer){
-    Accel_t accel;
-    // Sistema Polar
-    float acTan;
-    float acRadial;
-    float acTanRoz,acRadRoz;
-    float varVelocidadTan,varVelocidadRadial;
-    float varPosicRad;
-    float varAnguloTan;
-    // Sistema Rectangular
-    float acXRoz,acYRoz;
-    float varVX,varVY;
-    float varPX,varPY;
-    
-    if(ACCEL_GetAccel (&accel)){
-        if(radio>=0.015){
-            acRadial = accel.Accel_X* -0.1*cos( anguloR ) + accel.Accel_Y * -0.1 *sin( anguloR );
-            acTan = accel.Accel_Y*-0.1*cos( anguloR ) - accel.Accel_X * -0.1*sin( anguloR );
-            acRadRoz = acRadial - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*cos(arcoTangente(velocidadTan,velocidadRad)) * 10;
-            acTanRoz = acTan - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*sin(arcoTangente(velocidadTan,velocidadRad)) * 10;
-            
-            varVelocidadTan = acTanRoz * 0.001;
-            varVelocidadRadial = acRadRoz * 0.001;
-            velocidadTan += varVelocidadTan;
-            velocidadRad += varVelocidadRadial;
-            varPosicRad = velocidadRad * 0.001 ;
-            radio += varPosicRad;
-            varAnguloTan = velocidadTan/radio* 0.001 ;
-            anguloR += varAnguloTan; 
-            if(radio>=0.05 && velocidadRad > 0){
-                radio = 0.05;
-                velocidadRad = 0;
+    if(jugando){
+        Accel_t accel;
+        // Sistema Polar
+        float acTan;
+        float acRadial;
+        float acTanRoz,acRadRoz;
+        float varVelocidadTan,varVelocidadRadial;
+        float varPosicRad;
+        float varAnguloTan;
+        // Sistema Rectangular
+        float acXRoz,acYRoz;
+        float varVX,varVY;
+        float varPX,varPY;
+
+        if(ACCEL_GetAccel (&accel)){
+            if(radio>=0.015){
+                acRadial = accel.Accel_X* -0.1*cos( anguloR ) + accel.Accel_Y * -0.1 *sin( anguloR );
+                acTan = accel.Accel_Y*-0.1*cos( anguloR ) - accel.Accel_X * -0.1*sin( anguloR );
+
+                acRadRoz = acRadial - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*cos(arcoTangente(velocidadTan,velocidadRad)) * 10;
+                acTanRoz = acTan - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*sin(arcoTangente(velocidadTan,velocidadRad)) * 10;
+
+                varVelocidadTan = acTan * 0.001;
+                varVelocidadRadial = acRadial * 0.001;
+                velocidadTan += varVelocidadTan;
+                velocidadRad += varVelocidadRadial;
+                varPosicRad = velocidadRad * 0.001 ;
+                radio += varPosicRad;
+                varAnguloTan = velocidadTan/radio* 0.001 ;
+                anguloR += varAnguloTan; 
+
+                if(radio>=0.05 && velocidadRad > 0){
+                    radio = 0.05;
+                    velocidadRad = 0;
+                }
+                x = radio * cos(anguloR);
+                y = radio * sin(anguloR);
+                velocidadX = velocidadRad*cos(anguloR) - velocidadTan*sin(anguloR);
+                velocidadY = velocidadTan*cos(anguloR) + velocidadRad*sin(anguloR);
+
+            }else{
+                acXRoz = accel.Accel_X - sqrt(powf(velocidadX,2)+powf(velocidadY,2))*cos(arcoTangente(velocidadY,velocidadX)) * 10;
+                acYRoz = accel.Accel_Y - sqrt(powf(velocidadX,2)+powf(velocidadY,2))*sin(arcoTangente(velocidadY,velocidadX)) * 10;
+
+                varVX = accel.Accel_X * -0.1 * 0.001;
+                varVY = accel.Accel_Y * -0.1 * 0.001;
+                velocidadX += varVX;
+                velocidadY += varVY;
+                varPX = velocidadX * 0.001;
+                varPY = velocidadY * 0.001;
+                x += varPX;
+                y += varPY;
+
+                radio = (float)sqrt(x*x+y*y);
+                anguloR = arcoTangente(y,x);
+
+                velocidadRad = velocidadX*cos(anguloR) + velocidadY*sin(anguloR);
+                velocidadTan = -velocidadX*sin(anguloR) + velocidadY*cos(anguloR);
             }
-            x = radio * cos(anguloR);
-            y = radio * sin(anguloR);
-            velocidadX = velocidadRad*cos(anguloR) - velocidadTan*sin(anguloR);
-            velocidadY = velocidadTan*cos(anguloR) + velocidadRad*sin(anguloR);
-            
-        }else{
-            acXRoz = accel.Accel_X - sqrt(powf(velocidadX,2)+powf(velocidadY,2))*cos(arcoTangente(velocidadY,velocidadX)) * 10;
-            acYRoz = accel.Accel_Y - sqrt(powf(velocidadX,2)+powf(velocidadY,2))*sin(arcoTangente(velocidadY,velocidadX)) * 10;
-            
-            varVX = acXRoz * -0.1 * 0.001;
-            varVY = acYRoz * -0.1 * 0.001;
-            velocidadX += varVX;
-            velocidadY += varVY;
-            varPX = velocidadX * 0.001;
-            varPY = velocidadY * 0.001;
-            x += varPX;
-            y += varPY;
-            
-            radio = (float)sqrt(x*x+y*y);
-            anguloR = arcoTangente(x,y);
-            
-            velocidadRad = velocidadX*cos(anguloR) + velocidadY*sin(anguloR);
-            velocidadTan = -velocidadX*sin(anguloR) + velocidadY*cos(anguloR);
+            prenderLed();
         }
-        prenderLed();
     }
-    
 }
 
 void vApplicationMallocFailedHook( void ){

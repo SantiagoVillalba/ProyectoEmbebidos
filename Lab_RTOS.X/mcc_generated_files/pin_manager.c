@@ -110,10 +110,15 @@ void PIN_MANAGER_Initialize (void)
 
 
     /****************************************************************************
-     * Interrupt On Change: positive
+     * Interrupt On Change: any
      ***************************************************************************/
     CNEN0Abits.CNIE0A13 = 1;    //Pin : RA13
     CNEN0Bbits.CNIE0B15 = 1;    //Pin : RB15
+    CNEN1Abits.CNIE1A13 = 1;    //Pin : RA13
+    CNEN1Bbits.CNIE1B15 = 1;    //Pin : RB15
+    /****************************************************************************
+     * Interrupt On Change: positive
+     ***************************************************************************/
     CNEN0Bbits.CNIE0B7 = 1;    //Pin : RB7
     /****************************************************************************
      * Interrupt On Change: flag
@@ -193,7 +198,7 @@ void BTN1_SetIOCInterruptHandler(void *handler)
 }
 
 /* Interrupt service routine for the CNAI interrupt. */
-void __attribute__ ((vector(_CHANGE_NOTICE_A_VECTOR), interrupt(IPL1SOFT))) _CHANGE_NOTICE_A( void )
+void __attribute__ ((vector(_CHANGE_NOTICE_A_VECTOR), interrupt(IPL2SOFT))) _CHANGE_NOTICE_A( void )
 {
     if(IFS0bits.CNAIF == 1)
     {
@@ -213,7 +218,7 @@ void __attribute__ ((vector(_CHANGE_NOTICE_A_VECTOR), interrupt(IPL1SOFT))) _CHA
 }
 
 /* Interrupt service routine for the CNBI interrupt. */
-void __attribute__ ((vector(_CHANGE_NOTICE_B_VECTOR), interrupt(IPL1SOFT))) _CHANGE_NOTICE_B( void )
+void __attribute__ ((vector(_CHANGE_NOTICE_B_VECTOR), interrupt(IPL2SOFT))) _CHANGE_NOTICE_B( void )
 {
     if(IFS0bits.CNBIF == 1)
     {
