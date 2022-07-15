@@ -59,6 +59,7 @@ void HighScore( void *p_param );
 void prenderLed();
 
 void BotonS2();
+void vFinishWaiting (TimerHandle_t xTimer);
 bool apretoS2 = false;
 TimerHandle_t PasoDeSec;
 bool inicioTimer = false;
@@ -79,6 +80,8 @@ int main(void)
     
     while(!ACCEL_init());
     
+    PasoDeSec = xTimerCreate ("Waiting 3 sec",pdMS_TO_TICKS(3000UL),pdFALSE, NULL , vFinishWaiting);
+
     semCuadrante = xSemaphoreCreateBinary();
     xSemaphoreGive( semCuadrante );
     
@@ -170,7 +173,13 @@ void BotonS2(){
     contadorS2++;
 
     apretoS2 = !apretoS2;
-    if(!apretoS2 && contadorS2 == 2){
+    
+    if(inicioTimer && !apretoS2){
+        xTimerStopFromISR(PasoDeSec,NULL);
+        inicioTimer = false;
+    }
+    
+    if(!inicioTimer && !apretoS2 && contadorS2 == 2){
         if(jugando){
             xSemaphoreGiveFromISR( semTerminoJuego ,NULL);
             xSemaphoreGiveFromISR( semIniciarJuego ,NULL);
@@ -179,14 +188,9 @@ void BotonS2(){
         }
     }
     
-    if(inicioTimer && !apretoS2 && contadorS2 == 2){
-        xTimerDelete(PasoDeSec,0);
-        inicioTimer = false;
-    }
-    
-    if(apretoS2 && !inicioTimer && contadorS2 == 1){
-        //inicioTimer = true;
-        PasoDeSec = xTimerCreate ("Waiting 3 sec",pdMS_TO_TICKS(3000UL),pdFALSE, NULL , vFinishWaiting);
+    if(!inicioTimer && apretoS2  && contadorS2 == 1){
+        inicioTimer = true;
+        xTimerResetFromISR(PasoDeSec,NULL);
     }
     
     if(contadorS2 >= 2){
@@ -196,10 +200,10 @@ void BotonS2(){
 
 void vFinishWaiting (TimerHandle_t xTimer){
     xSemaphoreTake( semHighScore, portMAX_DELAY);
-    highScoreCounter = 0;
     historicHighScoreCounter = 0;
-    GuardarEnFlash(historicHighScoreCounter);
+    GuardarEnFlash(0);
     xSemaphoreGive( semHighScore );
+    inicioTimer = false;
 }
 
 
