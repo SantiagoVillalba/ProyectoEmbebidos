@@ -1,28 +1,30 @@
 #include "stdbool.h"
 #include <math.h>
-#include "FreeRTOS.h"
 #include "../mcc_generated_files/memory/flash.h"
 #include <stdint.h>
 
 #include "../mcc_generated_files/pin_manager.h"
 #include "../Platform/WS2812.h"
 
+// Enum de colores
 typedef enum{Red, Green, Blue, White, Black}colors;
 
+// Funcion que hace un settingRGB a negro de cada uno de los leds.
 void apagarLeds();
 
+// Funcion que dado un numero en base 10 lo cambia a base 4
 int cambiarBase4(int puntaje);
 
+// Funciones para guardar y leer en memoria no volatil
 void GuardarEnFlash(int score);
 int LeerEnFlash();
 
+// Tomando un numero en base 4, se devuelve un color correspondiente para representar
+// en el modo highscore de la placa
 colors colorBase4(int color);
 
-typedef struct {
-    uint8_t led;
-    colors color;
-} prender_led;
-
+// Funcion rehusada de los anteriores laboratorios, que a partir de un led y un 
+// color, lo prende.
 void settingRGB(uint8_t led, colors color);
 
 

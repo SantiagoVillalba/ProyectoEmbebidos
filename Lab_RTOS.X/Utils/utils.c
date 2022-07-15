@@ -1,7 +1,5 @@
 #include "utils.h"
 
-
-
 /* Have compiler allocate a page of flash from the NVM.  Aligned to a page. */
 static const uint32_t __attribute((space(prog),aligned(FLASH_ERASE_PAGE_SIZE_IN_PC_UNITS))) flashTestPage[FLASH_ERASE_PAGE_SIZE_IN_PC_UNITS/4];
 
@@ -21,7 +19,7 @@ static void MiscompareError()
 }
 
 
-
+// Funcion para guardan en memoria no volatil un score
 void GuardarEnFlash(int score)
 {
     uint32_t flashOffset, readData;
@@ -55,12 +53,14 @@ void GuardarEnFlash(int score)
     FLASH_Lock();
 }
 
+// Funcion para leer de memoria no volatil un score
 int LeerEnFlash(){
     // if flash write had no errors then read the flash to verify the data    
     return FLASH_ReadWord(flash_storage_address);
  
 }
 
+// Funcion para prender un led de un color
 void settingRGB(uint8_t led, colors color){
     static ws2812_t leds[8];
     // restamos uno para que vaya del 1 al 8 los leds
@@ -88,6 +88,7 @@ void settingRGB(uint8_t led, colors color){
     
 }
 
+// Funcion que devuelve segun un numero en base 4 su color correspondiente
 colors colorBase4(int color){
     colors new;
     switch(color){
@@ -107,6 +108,7 @@ colors colorBase4(int color){
     return new;
 }
 
+// Funcion que toma un numero en base 10 y va armando un numero en base 4
 int cambiarBase4(int puntaje){
     int b = 0;
     int numero = 0;
@@ -122,6 +124,8 @@ int cambiarBase4(int puntaje){
     return numero;
 }
 
+// Funcion para apagar todos los leds, para ahorrarse tener que llamar tantas
+// veces al settingRGB con el color Black
 void apagarLeds(){
     settingRGB(1,Black);
     settingRGB(2,Black);

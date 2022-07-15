@@ -154,7 +154,7 @@ void mostrarHighScore(int puntajeBase4){
 void BotonS2(){
     int static contadorS2 = 0;
     contadorS2++;
-    srand(seed++);
+    srand(++seed);
 
     apretoS2 = !apretoS2;
     
@@ -211,7 +211,6 @@ void InterfazGeneral( void *p_param ){
         velocidadRad = 0;
         // cambiar posicion bolita random
         // sumarle uno a la seed cada vez que muevas la globa
-        srand(seed++);
         radio = (float)(rand() % 50 );
         while(radio < 5){
             radio = (float)(rand() % 50 );
@@ -298,7 +297,6 @@ void IAEnemiga( void *p_param ){
             vTaskDelay(pdMS_TO_TICKS(1000UL));
             xSemaphoreTake( semCuadrante, portMAX_DELAY);
             //randomizar el lugar donde aparece el enemigo:
-            srand(seed++);
             cuadranteMaquina = (rand() % 8) + 1;
             while(cuadranteMaquina == cuadrantePlayer){
                 cuadranteMaquina = (rand() % 8) + 1;
