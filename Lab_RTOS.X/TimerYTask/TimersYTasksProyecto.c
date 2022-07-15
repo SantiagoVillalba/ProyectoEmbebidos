@@ -443,6 +443,7 @@ void vUpdatePosition (TimerHandle_t xTimer){
                 acRadial = accel.Accel_X* -0.1*cos( anguloR ) + accel.Accel_Y * -0.1 *sin( anguloR );
                 acTan = accel.Accel_Y*-0.1*cos( anguloR ) - accel.Accel_X * -0.1*sin( anguloR );
 
+                // Intento de rozamiento en el sistema Polar pero anda mal
                 //acRadRoz = acRadial - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*cos(arcoTangente(velocidadTan,velocidadRad)) * 1;
                 //acTanRoz = acTan - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*sin(arcoTangente(velocidadTan,velocidadRad)) * 1;
                 
@@ -474,6 +475,7 @@ void vUpdatePosition (TimerHandle_t xTimer){
             }else{
                 // Calculos del sistema rectangular cuando estamos en el centro
                 
+                // Intento de rozamiento en el sistema rectangular pero anda mal
                 //acXRoz = accel.Accel_X - sqrt(powf(velocidadX,2)+powf(velocidadY,2))*cos(arcoTangente(velocidadY,velocidadX)) * 10;
                 //acYRoz = accel.Accel_Y - sqrt(powf(velocidadX,2)+powf(velocidadY,2))*sin(arcoTangente(velocidadY,velocidadX)) * 10;
 
