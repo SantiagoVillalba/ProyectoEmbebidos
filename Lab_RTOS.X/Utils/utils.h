@@ -27,4 +27,13 @@ colors colorBase4(int color);
 // color, lo prende.
 void settingRGB(uint8_t led, colors color);
 
+// Uso chequear angulo para ver que este dentro de los rangos deseados el angulo
+void ChequearAnguloR(float *anguloR);
 
+// Funcion arcoTangente ampliada para que ande para todos los valores
+float arcoTangente(float y, float x);
+
+// Funcion simple para prender el buzzer el doble de tiempo que el x entrado por parametro
+void PrenderBuzzer(int x);
+
+void mostrarHighScore(int puntajeBase4);

@@ -23,6 +23,7 @@
 #include "mcc_generated_files/pin_manager.h"
 #include "Framework/Accelerometer.h"
 
+
 /*
                     Variables del proyecto:
 */
@@ -76,7 +77,6 @@ void vUpdatePosition (TimerHandle_t xTimer);
 void IAEnemiga( void *p_param );
 void HighScore( void *p_param );
 void prenderLed();
-void ChequearAnguloR();
 void vFinishWaiting (TimerHandle_t xTimer);
 
 // Funcion para atender la interrupcion del BotonS2
@@ -153,35 +153,6 @@ int main(void)
     to be created.  See the memory management section on the FreeRTOS web site
     for more details. */
     for(;;);
-}
-
-// Funcion simple para prender el buzzer el doble de tiempo que el x entrado por parametro
-void PrenderBuzzer(int x){
-    for(int i = 0; i <= x;i++){
-        BUZZER_SetHigh();
-        vTaskDelay(pdMS_TO_TICKS(1));
-        BUZZER_SetLow();
-        vTaskDelay(pdMS_TO_TICKS(1));
-    }
-}
-
-// Funcion que va digito por digito de el puntaje en base 4 y va prendiendo los leds para mostrar el highScore
-void mostrarHighScore(int puntajeBase4){
-    /*
-     * 0 es blanco
-     * 1 es rojo
-     * 2 es azul
-     * 3 es verde
-     */
-    int digito = 8;
-    while(digito >= 5)
-    {
-        // Se hace un delay para que se prendan correctamente los leds
-        vTaskDelay(pdMS_TO_TICKS(1));
-        settingRGB( digito , colorBase4(puntajeBase4 % 10));
-        digito--;
-        puntajeBase4 /= 10;
-    }
 }
 
 // Callback de la interrupcion para el botonS2
@@ -276,7 +247,7 @@ void InterfazGeneral( void *p_param ){
         anguloR = rand() * ((float)M_PI*2) / RAND_MAX  ;
         
         // Uso chequear angulo para ver que este dentro de los rangos deseados el angulo
-        ChequearAnguloR();
+        ChequearAnguloR(&anguloR);
 
         // Convertir los datos polares en cartesianos.
         x = radio * cos(anguloR);
@@ -365,6 +336,7 @@ void HighScore( void *p_param ){
             counterDif++;  
             // si se llego a los 10 segundos ya se puede aumentar la dificultad
             if(counterDif == 10 ){
+                PrenderBuzzer(50);
                 // protegemos el cambio de dificultad
                 xSemaphoreTake( semDificultadDelay, portMAX_DELAY);
                 // si se puede aumentar la dificultad, se resta al delay.
@@ -477,35 +449,11 @@ void IAEnemiga( void *p_param ){
     }
 }
 
-// Funcion arcoTangente ampliada para que ande para todos los valores
-float arcoTangente(float y, float x){
-    if(x > 0 && y > 0){
-        return atan((float)(y/x)) ;
-    }else if(x = 0 && y > 0){
-        return (float)(M_PI / 2);
-    }else if(x < 0){
-        return atan((float)(y/x)) + (float)M_PI;
-    }else if(x = 0 && y < 0){
-        return (float)(3*M_PI / 2) ;
-    }else if(x > 0 && y < 0){
-        return atan((float)(y/x)) + (float)2*M_PI;
-    }
-}
-
-// Chequeo del angulo del player para ver si esta dentro del rango entre 0 y 2*PI
-void ChequearAnguloR(){
-    if(anguloR >= (float)M_PI*2){
-        anguloR -= (float)2*M_PI;
-    }else if(anguloR < 0){
-        anguloR += (float)2*M_PI;
-    }
-}
-
 void prenderLed(){
     short cuadranteApagar;
     
     // chequeas el angulo
-    ChequearAnguloR();
+    ChequearAnguloR(&anguloR);
     
     // orotegemos el cambio de cuadrantes
     xSemaphoreTake( semCuadrante, portMAX_DELAY);
@@ -596,8 +544,8 @@ void vUpdatePosition (TimerHandle_t xTimer){
                 acRadial = accel.Accel_X* -0.1*cos( anguloR ) + accel.Accel_Y * -0.1 *sin( anguloR );
                 acTan = accel.Accel_Y*-0.1*cos( anguloR ) - accel.Accel_X * -0.1*sin( anguloR );
 
-                //acRadRoz = acRadial - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*cos(arcoTangente(velocidadTan,velocidadRad)) * 10;
-                //acTanRoz = acTan - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*sin(arcoTangente(velocidadTan,velocidadRad)) * 10;
+                //acRadRoz = acRadial - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*cos(arcoTangente(velocidadTan,velocidadRad)) * 1;
+                //acTanRoz = acTan - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*sin(arcoTangente(velocidadTan,velocidadRad)) * 1;
                 
                 // hacemos los calculos para calcular las otras variables
                 varVelocidadTan = acTan * 0.001;
@@ -616,7 +564,7 @@ void vUpdatePosition (TimerHandle_t xTimer){
                 }
                 
                 // se chequea el angulo para ver si es correcto antes de pasar al sistema rectangular
-                ChequearAnguloR();
+                ChequearAnguloR(&anguloR);
                 
                 // pasamos los datos calculados al sistema rectangular
                 x = radio * cos(anguloR);
@@ -644,7 +592,7 @@ void vUpdatePosition (TimerHandle_t xTimer){
                 anguloR = arcoTangente(y,x);
                 
                 // se chequea el angulo despues de la conversion de rectangular a polar
-                ChequearAnguloR();
+                ChequearAnguloR(&anguloR);
 
                 velocidadRad = velocidadX*cos(anguloR) + velocidadY*sin(anguloR);
                 velocidadTan = -velocidadX*sin(anguloR) + velocidadY*cos(anguloR);

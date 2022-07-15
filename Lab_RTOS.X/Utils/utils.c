@@ -1,4 +1,6 @@
 #include "utils.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 /* Have compiler allocate a page of flash from the NVM.  Aligned to a page. */
 static const uint32_t __attribute((space(prog),aligned(FLASH_ERASE_PAGE_SIZE_IN_PC_UNITS))) flashTestPage[FLASH_ERASE_PAGE_SIZE_IN_PC_UNITS/4];
@@ -137,4 +139,56 @@ void apagarLeds(){
     settingRGB(8,Black);
 }
 
+// Chequeo del angulo del player para ver si esta dentro del rango entre 0 y 2*PI
+void ChequearAnguloR(float *anguloR){
+    if(*anguloR >= (float)M_PI*2){
+        *anguloR -= (float)2*M_PI;
+    }else if(*anguloR < 0){
+        *anguloR += (float)2*M_PI;
+    }
+}
 
+// Funcion arcoTangente ampliada para que ande para todos los valores
+float arcoTangente(float y, float x){
+    if(x > 0 && y > 0){
+        return atan((float)(y/x)) ;
+    }else if(x = 0 && y > 0){
+        return (float)(M_PI / 2);
+    }else if(x < 0){
+        return atan((float)(y/x)) + (float)M_PI;
+    }else if(x = 0 && y < 0){
+        return (float)(3*M_PI / 2) ;
+    }else if(x > 0 && y < 0){
+        return atan((float)(y/x)) + (float)2*M_PI;
+    }
+}
+
+// Funcion simple para prender el buzzer el doble de tiempo que el x entrado por parametro
+void PrenderBuzzer(int x){
+    for(int i = 0; i <= x;i++){
+        BUZZER_SetHigh();
+        vTaskDelay(pdMS_TO_TICKS(1));
+        BUZZER_SetLow();
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+}
+
+
+// Funcion que va digito por digito de el puntaje en base 4 y va prendiendo los leds para mostrar el highScore
+void mostrarHighScore(int puntajeBase4){
+    /*
+     * 0 es blanco
+     * 1 es rojo
+     * 2 es azul
+     * 3 es verde
+     */
+    int digito = 8;
+    while(digito >= 5)
+    {
+        // Se hace un delay para que se prendan correctamente los leds
+        vTaskDelay(pdMS_TO_TICKS(1));
+        settingRGB( digito , colorBase4(puntajeBase4 % 10));
+        digito--;
+        puntajeBase4 /= 10;
+    }
+}
