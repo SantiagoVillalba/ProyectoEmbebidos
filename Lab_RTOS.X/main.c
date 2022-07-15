@@ -59,10 +59,7 @@ void HighScore( void *p_param );
 void prenderLed();
 
 void BotonS2();
-void BotonS3();
-SemaphoreHandle_t protejoBotones;
 bool apretoS2 = false;
-bool apretoS3 = false;
 TimerHandle_t PasoDeSec;
 bool inicioTimer = false;
 TimerHandle_t PasoDeSec;
@@ -77,7 +74,6 @@ int main(void)
     SYSTEM_Initialize( );
     
     BTN1_SetInterruptHandler(&BotonS2);
-    BTN2_SetInterruptHandler(&BotonS3);
     
     apagarLeds();
     
@@ -93,9 +89,6 @@ int main(void)
     
     semHighScore = xSemaphoreCreateBinary();
     xSemaphoreGive( semHighScore );
-    
-    protejoBotones = xSemaphoreCreateBinary();
-    xSemaphoreGive( protejoBotones );
             
     semTerminoJuego = xSemaphoreCreateCounting(1,0);
     
@@ -112,6 +105,8 @@ int main(void)
     //while(radio<110){
         //radio = rand() % 0.05;
     //}
+    // sumarle uno a la seed cada vez que muevas la globa
+    //srand(seed);
     //anguloR = rand() * ((float)M_PI*2) / RAND_MAX  ;
 
     // esta hardcoded
@@ -174,50 +169,36 @@ void BotonS2(){
     int static contadorS2 = 0;
     contadorS2++;
 
-    xSemaphoreTakeFromISR( protejoBotones ,NULL);
     apretoS2 = !apretoS2;
-    if(!apretoS2 && contadorS2 == 2 && !apretoS3){
+    if(!apretoS2 && contadorS2 == 2){
         if(jugando){
             xSemaphoreGiveFromISR( semTerminoJuego ,NULL);
             xSemaphoreGiveFromISR( semIniciarJuego ,NULL);
         }else{
             xSemaphoreGiveFromISR( semIniciarJuego ,NULL);
         }
-        contadorS2 = 0;
     }
-    xSemaphoreGiveFromISR( protejoBotones ,NULL);
-
-    xSemaphoreTakeFromISR( protejoBotones ,NULL);
-    if(inicioTimer && !apretoS2){
+    
+    if(inicioTimer && !apretoS2 && contadorS2 == 2){
         xTimerDelete(PasoDeSec,0);
         inicioTimer = false;
     }
-    xSemaphoreGiveFromISR( protejoBotones ,NULL);
+    
+    if(apretoS2 && !inicioTimer && contadorS2 == 1){
+        //inicioTimer = true;
+        PasoDeSec = xTimerCreate ("Waiting 3 sec",pdMS_TO_TICKS(3000UL),pdFALSE, NULL , vFinishWaiting);
+    }
+    
     if(contadorS2 >= 2){
         contadorS2 = 0;
     }
-}
-void BotonS3(){
-    xSemaphoreTakeFromISR( protejoBotones ,NULL);
-    apretoS3 = !apretoS3;
-    if(apretoS2 && apretoS3 && !inicioTimer){
-        inicioTimer = true;
-        PasoDeSec = xTimerCreate ("Waiting 3 sec",pdMS_TO_TICKS(3000UL),pdFALSE, NULL , vFinishWaiting);
-    }
-    xSemaphoreGiveFromISR( protejoBotones ,NULL);
-
-    xSemaphoreTakeFromISR( protejoBotones ,NULL);
-    if(inicioTimer && !apretoS3){
-        xTimerDelete(PasoDeSec,0);
-        inicioTimer = false;
-    }
-    xSemaphoreGiveFromISR( protejoBotones ,NULL);
 }
 
 void vFinishWaiting (TimerHandle_t xTimer){
     xSemaphoreTake( semHighScore, portMAX_DELAY);
     highScoreCounter = 0;
     historicHighScoreCounter = 0;
+    GuardarEnFlash(historicHighScoreCounter);
     xSemaphoreGive( semHighScore );
 }
 
@@ -226,6 +207,7 @@ void InterfazGeneral( void *p_param ){
     int puntajeBase4;
     while(1){
         xSemaphoreTake( semIniciarJuego, portMAX_DELAY);
+        historicHighScoreCounter = LeerEnFlash();
         PrenderBuzzer(500);
         apagarLeds();
         highScoreCounter = 0;
@@ -249,7 +231,10 @@ void InterfazGeneral( void *p_param ){
         puntajeBase4 = cambiarBase4(highScoreCounter);
         mostrarHighScore(puntajeBase4);
         if(highScoreCounter > historicHighScoreCounter){
+            
             historicHighScoreCounter = highScoreCounter;
+            GuardarEnFlash(historicHighScoreCounter);
+            
             PrenderBuzzer(50);
             vTaskDelay(pdMS_TO_TICKS(100));
             PrenderBuzzer(50);
@@ -259,6 +244,7 @@ void InterfazGeneral( void *p_param ){
             PrenderBuzzer(50);
             vTaskDelay(pdMS_TO_TICKS(100));
             PrenderBuzzer(50);
+            
         }else{
             PrenderBuzzer(200);
             vTaskDelay(pdMS_TO_TICKS(100));

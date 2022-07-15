@@ -1,6 +1,66 @@
 #include "utils.h"
 
 
+
+/* Have compiler allocate a page of flash from the NVM.  Aligned to a page. */
+static const uint32_t __attribute((space(prog),aligned(FLASH_ERASE_PAGE_SIZE_IN_PC_UNITS))) flashTestPage[FLASH_ERASE_PAGE_SIZE_IN_PC_UNITS/4];
+
+uint32_t flash_storage_address = (uint32_t) flashTestPage;
+
+// We have detected a flash hardware error of some type.
+static void FlashError()
+{
+    while (1) 
+    { }
+}
+
+static void MiscompareError()
+{
+    while (1) 
+    { }
+}
+
+
+
+void GuardarEnFlash(int score)
+{
+    uint32_t flashOffset, readData;
+    uint16_t result;
+    uint32_t write_data[2]= {0};
+
+    // Program Valid Key for NVM Commands
+    FLASH_Unlock(FLASH_UNLOCK_KEY);
+
+    // Erase the page of flash at this address
+    result = FLASH_ErasePage(flash_storage_address);
+    
+    if (result == false)
+    {
+        FlashError();
+    }
+
+
+    // Write 32 bit Data to the first DWORD locations.
+    write_data[0] = score;
+    write_data[1] = 0;
+    
+    result  = FLASH_WriteDoubleWord(flash_storage_address, write_data[0],write_data[1]);
+    
+    if (result == false)
+    {
+        FlashError();
+    }
+
+    // Clear Key for NVM Commands so accidental call to flash routines will not corrupt flash
+    FLASH_Lock();
+}
+
+int LeerEnFlash(){
+    // if flash write had no errors then read the flash to verify the data    
+    return FLASH_ReadWord(flash_storage_address);
+ 
+}
+
 void settingRGB(uint8_t led, colors color){
     static ws2812_t leds[8];
     // restamos uno para que vaya del 1 al 8 los leds
