@@ -52,11 +52,13 @@
         <itemPath>Platform/WS2812.h</itemPath>
         <itemPath>Platform/LIS3DH.h</itemPath>
       </logicalFolder>
+      <logicalFolder name="f5" displayName="TimersYTasks" projectFiles="true">
+        <itemPath>TimerYTask/TimersYTasksProyecto.h</itemPath>
+      </logicalFolder>
       <logicalFolder name="f3" displayName="Utils" projectFiles="true">
         <itemPath>Utils/utils.h</itemPath>
       </logicalFolder>
       <itemPath>FreeRTOSConfig.h</itemPath>
-      <itemPath>TimersYTasksProyecto.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -106,11 +108,13 @@
         <itemPath>Platform/WS2812.c</itemPath>
         <itemPath>Platform/LIS3DH.c</itemPath>
       </logicalFolder>
+      <logicalFolder name="f5" displayName="TimersYTasks" projectFiles="true">
+        <itemPath>TimerYTask/TimersYTasksProyecto.c</itemPath>
+      </logicalFolder>
       <logicalFolder name="f3" displayName="Utils" projectFiles="true">
         <itemPath>Utils/utils.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
-      <itemPath>TimersYTasksProyecto.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

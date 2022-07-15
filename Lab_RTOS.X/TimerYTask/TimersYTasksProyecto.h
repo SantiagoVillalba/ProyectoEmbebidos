@@ -1,12 +1,12 @@
 /**
   Section: Included Files
  */
-#include "mcc_generated_files/rtcc.h"
-#include "mcc_generated_files/system.h"
-#include "mcc_generated_files/usb/usb_device.h"
-#include "mcc_generated_files/usb/usb_device_cdc.h"
+#include "../mcc_generated_files/rtcc.h"
+#include "../mcc_generated_files/system.h"
+#include "../mcc_generated_files/usb/usb_device.h"
+#include "../mcc_generated_files/usb/usb_device_cdc.h"
 
-#include "Utils/utils.h"
+#include "../Utils/utils.h"
 #include <string.h>
 #include <time.h>
 #include <stdio.h>
@@ -19,9 +19,9 @@
 #include "timers.h"
 #include "queue.h"
 
-#include "mcc_generated_files/system.h"
-#include "mcc_generated_files/pin_manager.h"
-#include "Framework/Accelerometer.h"
+#include "../mcc_generated_files/system.h"
+#include "../mcc_generated_files/pin_manager.h"
+#include "../framework/Accelerometer.h"
 
 
 /*
