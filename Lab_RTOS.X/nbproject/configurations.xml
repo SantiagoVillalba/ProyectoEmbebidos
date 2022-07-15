@@ -56,6 +56,7 @@
         <itemPath>Utils/utils.h</itemPath>
       </logicalFolder>
       <itemPath>FreeRTOSConfig.h</itemPath>
+      <itemPath>TimersYTasksProyecto.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -109,6 +110,7 @@
         <itemPath>Utils/utils.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
+      <itemPath>TimersYTasksProyecto.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
