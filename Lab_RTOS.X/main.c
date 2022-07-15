@@ -40,6 +40,7 @@ float velocidadY = 0;
 float velocidadTan = 0;
 float velocidadRad = 0;
 
+int volatile seed = 0;
 int counterDif = 1;
 int dificultadDelayMS = 3000;
 
@@ -57,6 +58,7 @@ void vUpdatePosition (TimerHandle_t xTimer);
 void IAEnemiga( void *p_param );
 void HighScore( void *p_param );
 void prenderLed();
+void ChequearAnguloR();
 
 void BotonS2();
 void vFinishWaiting (TimerHandle_t xTimer);
@@ -102,26 +104,7 @@ int main(void)
     semArrancarIA = xSemaphoreCreateCounting(1,0);
             
     xTaskCreate( InterfazGeneral, "task0", configMINIMAL_STACK_SIZE+200, NULL, tskIDLE_PRIORITY+10, NULL );
-    
-    
-    //radio = rand() % 0.05;
-    //while(radio<110){
-        //radio = rand() % 0.05;
-    //}
-    // sumarle uno a la seed cada vez que muevas la globa
-    //srand(seed);
-    //anguloR = rand() * ((float)M_PI*2) / RAND_MAX  ;
 
-    // esta hardcoded
-    radio = 0.03;
-    anguloR = (float)3*M_PI/4;
-
-    // Convertir esto en cartesiana.
-    x = radio * cos(anguloR);
-    y = radio * sin(anguloR);
-
-    //prenderLed();
-    
     xTaskCreate( HighScore, "task2", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+3, NULL );
 
     xTaskCreate( IAEnemiga, "task1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL );
@@ -171,6 +154,7 @@ void mostrarHighScore(int puntajeBase4){
 void BotonS2(){
     int static contadorS2 = 0;
     contadorS2++;
+    srand(seed++);
 
     apretoS2 = !apretoS2;
     
@@ -215,12 +199,35 @@ void InterfazGeneral( void *p_param ){
         PrenderBuzzer(500);
         apagarLeds();
         highScoreCounter = 0;
+        cuadrantePlayer = 0;
         cuadranteMaquina = 0;
+        x = 0;
+        y = 0;
+        radio = 0;
+        anguloR = 0;
         velocidadX = 0;
         velocidadY = 0;
         velocidadTan = 0;
         velocidadRad = 0;
         // cambiar posicion bolita random
+        // sumarle uno a la seed cada vez que muevas la globa
+        srand(seed++);
+        radio = (float)(rand() % 50 );
+        while(radio < 5){
+            radio = (float)(rand() % 50 );
+        }
+        radio /= 1000;
+        anguloR = rand() * ((float)M_PI*2) / RAND_MAX  ;
+        
+        ChequearAnguloR();
+
+        // Convertir esto en cartesiana.
+        x = radio * cos(anguloR);
+        y = radio * sin(anguloR);
+        
+        prenderLed();
+        
+        //arrancar tasks y habilitar timer
         
         jugando = true;
         xSemaphoreGive(semArrancarIA);
@@ -290,91 +297,72 @@ void IAEnemiga( void *p_param ){
         if(jugando){
             vTaskDelay(pdMS_TO_TICKS(1000UL));
             xSemaphoreTake( semCuadrante, portMAX_DELAY);
-            switch(cuadrantePlayer){
-                case 1:
-                    cuadranteMaquina = 5;
-                    break;
-                case 2:
-                    cuadranteMaquina = 6;
-                    break;
-                case 3:
-                    cuadranteMaquina = 7;
-                    break;
-                case 4:
-                    cuadranteMaquina = 8;
-                    break;
-                case 5:
-                    cuadranteMaquina = 1;
-                    break;
-                case 6:
-                    cuadranteMaquina = 2;
-                    break;
-                case 7:
-                    cuadranteMaquina = 3;
-                    break;
-                case 8:
-                    cuadranteMaquina = 4;
-                    break;
+            //randomizar el lugar donde aparece el enemigo:
+            srand(seed++);
+            cuadranteMaquina = (rand() % 8) + 1;
+            while(cuadranteMaquina == cuadrantePlayer){
+                cuadranteMaquina = (rand() % 8) + 1;
             }
             settingRGB(cuadranteMaquina,Red);
             xSemaphoreGive( semCuadrante );
             xSemaphoreGive( arrancoElEnemigo );
-        }
-        while(jugando){
-            xSemaphoreTake( semDificultadDelay, portMAX_DELAY);
-            vTaskDelay(pdMS_TO_TICKS(dificultadDelayMS));
-            xSemaphoreGive( semDificultadDelay );
-            // logica del enemigo
-            if(!jugando){
-                break;
-            }
-            xSemaphoreTake( semCuadrante, portMAX_DELAY);
-            if(cuadranteMaquina == cuadrantePlayer){
-                // se termino el juego perdiste;
-                if(jugando){
-                    xSemaphoreGive( semTerminoJuego );
+            
+            while(jugando){
+                xSemaphoreTake( semDificultadDelay, portMAX_DELAY);
+                vTaskDelay(pdMS_TO_TICKS(dificultadDelayMS));
+                xSemaphoreGive( semDificultadDelay );
+                // logica del enemigo
+                if(!jugando){
+                    break;
                 }
-            }else{
-                int contadorRecorroNormal = 0;
-                int punteroNormal = cuadranteMaquina;
-                bool encuentroNormal = false;
-
-                int contadorRecorroDerAIzq = 0;
-                int punteroDerAIzq = cuadranteMaquina;
-                bool encuentroDerAIzq = false;
-                while(!encuentroNormal || !encuentroDerAIzq){
-                    if(punteroNormal != cuadrantePlayer){
-                        punteroNormal = (punteroNormal % 8) + 1;
-                        contadorRecorroNormal++;
-                    }else{
-                        encuentroNormal = true;
+                xSemaphoreTake( semCuadrante, portMAX_DELAY);
+                if(cuadranteMaquina == cuadrantePlayer){
+                    // se termino el juego perdiste;
+                    if(jugando){
+                        xSemaphoreGive( semTerminoJuego );
                     }
-
-                    if(punteroDerAIzq != cuadrantePlayer){
-                        if(punteroDerAIzq > 1){
-                            punteroDerAIzq = punteroDerAIzq - 1;
-                        }else{
-                            punteroDerAIzq = 8;
-                        }
-                        contadorRecorroDerAIzq++;
-                    }else{
-                        encuentroDerAIzq = true;
-                    }
-                }
-                settingRGB(cuadranteMaquina,Black);
-
-                if(contadorRecorroNormal <= contadorRecorroDerAIzq){
-                    cuadranteMaquina = (cuadranteMaquina % 8) + 1;
                 }else{
-                    if(cuadranteMaquina > 1){
-                        cuadranteMaquina = (cuadranteMaquina - 1);
-                    }else{
-                        cuadranteMaquina = 8;
+                    int contadorRecorroNormal = 0;
+                    int punteroNormal = cuadranteMaquina;
+                    bool encuentroNormal = false;
+
+                    int contadorRecorroDerAIzq = 0;
+                    int punteroDerAIzq = cuadranteMaquina;
+                    bool encuentroDerAIzq = false;
+                    while(!encuentroNormal || !encuentroDerAIzq){
+                        if(punteroNormal != cuadrantePlayer){
+                            punteroNormal = (punteroNormal % 8) + 1;
+                            contadorRecorroNormal++;
+                        }else{
+                            encuentroNormal = true;
+                        }
+
+                        if(punteroDerAIzq != cuadrantePlayer){
+                            if(punteroDerAIzq > 1){
+                                punteroDerAIzq = punteroDerAIzq - 1;
+                            }else{
+                                punteroDerAIzq = 8;
+                            }
+                            contadorRecorroDerAIzq++;
+                        }else{
+                            encuentroDerAIzq = true;
+                        }
                     }
+                    settingRGB(cuadranteMaquina,Black);
+
+                    if(contadorRecorroNormal <= contadorRecorroDerAIzq){
+                        cuadranteMaquina = (cuadranteMaquina % 8) + 1;
+                    }else{
+                        if(cuadranteMaquina > 1){
+                            cuadranteMaquina = (cuadranteMaquina - 1);
+                        }else{
+                            cuadranteMaquina = 8;
+                        }
+                    }
+                    settingRGB(cuadranteMaquina,Red);
                 }
-                settingRGB(cuadranteMaquina,Red);
+                xSemaphoreGive( semCuadrante );
             }
-            xSemaphoreGive( semCuadrante );
         }
     }
 }
@@ -393,14 +381,18 @@ float arcoTangente(float y, float x){
     }
 }
 
-void prenderLed(){
-    short cuadranteApagar;
-    
+void ChequearAnguloR(){
     if(anguloR >= (float)M_PI*2){
         anguloR -= (float)2*M_PI;
     }else if(anguloR < 0){
         anguloR += (float)2*M_PI;
     }
+}
+
+void prenderLed(){
+    short cuadranteApagar;
+    
+    ChequearAnguloR();
     
     // protegerlo con semaforos
     xSemaphoreTake( semCuadrante, portMAX_DELAY);
@@ -470,22 +462,22 @@ void vUpdatePosition (TimerHandle_t xTimer){
         // Sistema Polar
         float acTan;
         float acRadial;
-        float acTanRoz,acRadRoz;
+        //float acTanRoz,acRadRoz;
         float varVelocidadTan,varVelocidadRadial;
         float varPosicRad;
         float varAnguloTan;
         // Sistema Rectangular
-        float acXRoz,acYRoz;
+        //float acXRoz,acYRoz;
         float varVX,varVY;
         float varPX,varPY;
 
         if(ACCEL_GetAccel (&accel)){
-            if(radio>=0.015){
+            if(radio>=0.0005){
                 acRadial = accel.Accel_X* -0.1*cos( anguloR ) + accel.Accel_Y * -0.1 *sin( anguloR );
                 acTan = accel.Accel_Y*-0.1*cos( anguloR ) - accel.Accel_X * -0.1*sin( anguloR );
 
-                acRadRoz = acRadial - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*cos(arcoTangente(velocidadTan,velocidadRad)) * 10;
-                acTanRoz = acTan - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*sin(arcoTangente(velocidadTan,velocidadRad)) * 10;
+                //acRadRoz = acRadial - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*cos(arcoTangente(velocidadTan,velocidadRad)) * 10;
+                //acTanRoz = acTan - sqrt(powf(velocidadTan,2)+powf(velocidadRad,2))*sin(arcoTangente(velocidadTan,velocidadRad)) * 10;
 
                 varVelocidadTan = acTan * 0.001;
                 varVelocidadRadial = acRadial * 0.001;
@@ -501,11 +493,7 @@ void vUpdatePosition (TimerHandle_t xTimer){
                     velocidadRad = 0;
                 }
                 
-                if(anguloR >= (float)M_PI*2){
-                    anguloR -= (float)2*M_PI;
-                }else if(anguloR < 0){
-                    anguloR += (float)2*M_PI;
-                }
+                ChequearAnguloR();
                 
                 x = radio * cos(anguloR);
                 y = radio * sin(anguloR);
@@ -513,8 +501,8 @@ void vUpdatePosition (TimerHandle_t xTimer){
                 velocidadY = velocidadTan*cos(anguloR) + velocidadRad*sin(anguloR);
 
             }else{
-                acXRoz = accel.Accel_X - sqrt(powf(velocidadX,2)+powf(velocidadY,2))*cos(arcoTangente(velocidadY,velocidadX)) * 10;
-                acYRoz = accel.Accel_Y - sqrt(powf(velocidadX,2)+powf(velocidadY,2))*sin(arcoTangente(velocidadY,velocidadX)) * 10;
+                //acXRoz = accel.Accel_X - sqrt(powf(velocidadX,2)+powf(velocidadY,2))*cos(arcoTangente(velocidadY,velocidadX)) * 10;
+                //acYRoz = accel.Accel_Y - sqrt(powf(velocidadX,2)+powf(velocidadY,2))*sin(arcoTangente(velocidadY,velocidadX)) * 10;
 
                 varVX = accel.Accel_X * -0.1 * 0.001;
                 varVY = accel.Accel_Y * -0.1 * 0.001;
@@ -527,6 +515,8 @@ void vUpdatePosition (TimerHandle_t xTimer){
 
                 radio = (float)sqrt(x*x+y*y);
                 anguloR = arcoTangente(y,x);
+                
+                ChequearAnguloR();
 
                 velocidadRad = velocidadX*cos(anguloR) + velocidadY*sin(anguloR);
                 velocidadTan = -velocidadX*sin(anguloR) + velocidadY*cos(anguloR);

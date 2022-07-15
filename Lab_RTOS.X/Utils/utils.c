@@ -108,8 +108,8 @@ colors colorBase4(int color){
 }
 
 int cambiarBase4(int puntaje){
-    int b;
-    int numero;
+    int b = 0;
+    int numero = 0;
     int contador = 0;
  
     while(puntaje!=0)
